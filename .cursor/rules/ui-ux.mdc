@@ -1,0 +1,30 @@
+---
+description: Zasady UI/UX, Tailwind, Shadcn i Animacji (Mobile First)
+globs: components/**/*.{ts,tsx}, app/**/page.tsx
+---
+
+# UI/UX & Design System
+
+## Mobile-First Philosophy
+1.  **Touch Targets:** Buttons and interactables must be min **44px** height.
+2.  **Safe Areas:** Respect safe areas on mobile (bottom safe area for swipe gestures).
+3.  **Thumb Zone:** Place primary actions (Add, Check) at the bottom of the screen.
+
+## Component Stack
+- **Library:** Shadcn/UI (Radix Primitives). Do not reinvent standard inputs/dialogs.
+- **Styling:** Tailwind CSS. Use `cn()` utility for class merging.
+- **Icons:** Lucide React.
+
+## Gestures & Animation (Framer Motion)
+This app relies heavily on swipe gestures.
+- Use `framer-motion` for all enter/exit animations.
+- **Swipe Pattern:**
+  - Swipe Right (>50px): Action "Complete" (Green indicator).
+  - Swipe Left (>50px): Action "Delete/Edit" (Red/Gray indicator).
+- **Drag & Drop:** Use `@dnd-kit` or `framer-motion` reorder group for sorting items.
+
+## Packing Mode
+If context `isPackingMode` is true:
+- Hide small icon buttons.
+- Increase font size of item names.
+- Show large checkboxes.

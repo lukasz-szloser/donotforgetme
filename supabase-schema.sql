@@ -1,90 +1,58 @@
--- Packing Helper Database Schema for Supabase
--- Run this in your Supabase SQL Editor
+-- 1. PROFILES (Publiczne dane użytkowników do wyświetlania awatarów)
+create table profiles (
+  id uuid references auth.users on delete cascade not null primary key,
+  email text,
+  full_name text,
+  avatar_url text,
+  updated_at timestamp with time zone
+);
 
--- Enable UUID extension
-create extension if not exists "uuid-ossp";
+-- Trigger: Automatycznie twórz profil po rejestracji w Supabase Auth
+create or replace function public.handle_new_user()
+returns trigger as $$
+begin
+  insert into public.profiles (id, email, full_name, avatar_url)
+  values (new.id, new.email, new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'avatar_url');
+  return new;
+end;
+$$ language plpgsql security definer;
 
--- Packing Lists Table
-create table if not exists packing_lists (
-  id uuid default uuid_generate_v4() primary key,
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
+
+-- 2. PACKING LISTS (Listy)
+create table packing_lists (
+  id uuid default gen_random_uuid() primary key,
+  owner_id uuid references profiles(id) on delete cascade not null,
   name text not null,
   description text,
-  user_id uuid references auth.users not null,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  shared boolean default false
+  is_public boolean default false, -- Dla linków "tylko do odczytu"
+  created_at timestamp with time zone default now(),
+  updated_at timestamp with time zone default now()
 );
 
--- Packing Items Table (with support for nested/recursive items)
-create table if not exists packing_items (
-  id uuid default uuid_generate_v4() primary key,
-  title text not null,
-  description text,
-  checked boolean default false,
-  parent_id uuid references packing_items(id) on delete cascade,
+-- 3. COLLABORATORS (Kto ma dostęp do edycji poza właścicielem)
+create table list_collaborators (
   list_id uuid references packing_lists(id) on delete cascade not null,
-  user_id uuid references auth.users not null,
-  "order" integer not null default 0,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+  user_id uuid references profiles(id) on delete cascade not null,
+  role text default 'editor', -- 'editor', 'viewer'
+  primary key (list_id, user_id)
 );
 
--- Create indexes for better performance
-create index if not exists packing_lists_user_id_idx on packing_lists(user_id);
-create index if not exists packing_items_list_id_idx on packing_items(list_id);
-create index if not exists packing_items_parent_id_idx on packing_items(parent_id);
-create index if not exists packing_items_user_id_idx on packing_items(user_id);
+-- 4. PACKING ITEMS (Elementy rekurencyjne)
+create table packing_items (
+  id uuid default gen_random_uuid() primary key,
+  list_id uuid references packing_lists(id) on delete cascade not null,
+  parent_id uuid references packing_items(id) on delete cascade, -- Rekurencja
+  title text not null,
+  checked boolean default false,
+  position integer default 0, -- Do sortowania Drag & Drop
+  created_at timestamp with time zone default now(),
+  updated_at timestamp with time zone default now()
+);
 
--- Enable Row Level Security
-alter table packing_lists enable row level security;
-alter table packing_items enable row level security;
-
--- Drop existing policies if they exist
-drop policy if exists "Users can view their own lists" on packing_lists;
-drop policy if exists "Users can create their own lists" on packing_lists;
-drop policy if exists "Users can update their own lists" on packing_lists;
-drop policy if exists "Users can delete their own lists" on packing_lists;
-
-drop policy if exists "Users can view items from their lists" on packing_items;
-drop policy if exists "Users can create items in their lists" on packing_items;
-drop policy if exists "Users can update their items" on packing_items;
-drop policy if exists "Users can delete their items" on packing_items;
-
--- Policies for packing_lists
-create policy "Users can view their own lists"
-  on packing_lists for select
-  using (auth.uid() = user_id);
-
-create policy "Users can create their own lists"
-  on packing_lists for insert
-  with check (auth.uid() = user_id);
-
-create policy "Users can update their own lists"
-  on packing_lists for update
-  using (auth.uid() = user_id);
-
-create policy "Users can delete their own lists"
-  on packing_lists for delete
-  using (auth.uid() = user_id);
-
--- Policies for packing_items
-create policy "Users can view items from their lists"
-  on packing_items for select
-  using (auth.uid() = user_id);
-
-create policy "Users can create items in their lists"
-  on packing_items for insert
-  with check (auth.uid() = user_id);
-
-create policy "Users can update their items"
-  on packing_items for update
-  using (auth.uid() = user_id);
-
-create policy "Users can delete their items"
-  on packing_items for delete
-  using (auth.uid() = user_id);
-
--- Function to automatically update updated_at timestamp
+-- 5. AUTOMATYCZNE UPDATE_AT (Z Twojego pliku - to jest super!)
 create or replace function update_updated_at_column()
 returns trigger as $$
 begin
@@ -93,19 +61,49 @@ begin
 end;
 $$ language plpgsql;
 
--- Triggers to automatically update updated_at
-drop trigger if exists update_packing_lists_updated_at on packing_lists;
 create trigger update_packing_lists_updated_at
-  before update on packing_lists
-  for each row
-  execute procedure update_updated_at_column();
+  before update on packing_lists for each row execute procedure update_updated_at_column();
 
-drop trigger if exists update_packing_items_updated_at on packing_items;
 create trigger update_packing_items_updated_at
-  before update on packing_items
-  for each row
-  execute procedure update_updated_at_column();
+  before update on packing_items for each row execute procedure update_updated_at_column();
 
--- Enable Realtime for collaborative features
+-- 6. ENABLE RLS (Bezpieczeństwo)
+alter table profiles enable row level security;
+alter table packing_lists enable row level security;
+alter table list_collaborators enable row level security;
+alter table packing_items enable row level security;
+
+-- POLICY: Profiles (Każdy może widzieć podstawowe dane, edycja tylko swoje)
+create policy "Public profiles are viewable by everyone" on profiles for select using (true);
+create policy "Users can update own profile" on profiles for update using (auth.uid() = id);
+
+-- POLICY: Lists (Widzi Właściciel LUB Współpracownik)
+create policy "Users can view own or shared lists" on packing_lists for select
+using (
+  auth.uid() = owner_id 
+  OR 
+  exists (select 1 from list_collaborators where list_id = packing_lists.id and user_id = auth.uid())
+);
+
+create policy "Users can create lists" on packing_lists for insert with check (auth.uid() = owner_id);
+
+create policy "Owners can update lists" on packing_lists for update using (auth.uid() = owner_id);
+
+-- POLICY: Items (Dostęp jeśli masz dostęp do Listy)
+create policy "Access items if have access to list" on packing_items for all
+using (
+  exists (
+    select 1 from packing_lists 
+    where id = packing_items.list_id 
+    and (
+      owner_id = auth.uid() 
+      or 
+      exists (select 1 from list_collaborators where list_id = packing_lists.id and user_id = auth.uid())
+    )
+  )
+);
+
+-- 7. REALTIME
 alter publication supabase_realtime add table packing_lists;
 alter publication supabase_realtime add table packing_items;
+alter publication supabase_realtime add table list_collaborators;
