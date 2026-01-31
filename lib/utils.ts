@@ -9,7 +9,7 @@ export function cn(...inputs: ClassValue[]) {
 /**
  * Transforms a flat list of packing items into a tree structure
  * using the Adjacency List pattern (parent_id references).
- * 
+ *
  * @param items - Flat array of packing items from database
  * @returns Array of root items (items without parent_id) with nested children
  */
@@ -42,9 +42,7 @@ export function buildTreeFromFlatList(
   });
 
   // Sort by position
-  const sortByPosition = (
-    items: (PackingItem & { children?: PackingItem[] })[]
-  ) => {
+  const sortByPosition = (items: (PackingItem & { children?: PackingItem[] })[]) => {
     items.sort((a, b) => a.position - b.position);
     items.forEach((item) => {
       if (item.children) {

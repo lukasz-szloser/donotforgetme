@@ -10,5 +10,6 @@ Key UX: Recursive lists, Swipe gestures, "Packing Mode" (big UI), and Realtime c
 - Refer to `.cursor/rules/ui-ux.mdc` for frontend components.
 - Refer to `.ai/prd.md` for business logic.
 
-## Critical Rule
-Always strictly follow **Next.js 16** conventions (Server Actions) as defined in the rules.
+## Critical Rules
+1.  **Strict Next.js 16:** Follow Server Actions conventions defined in `.mdc` rules.
+2.  **Formatting:** ALWAYS run `npm run format` at the end of your generation process to ensure all files match Prettier standards.

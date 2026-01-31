@@ -6,7 +6,8 @@ globs: app/**/*.{ts,tsx}, actions/**/*.ts, lib/**/*.ts
 
 ## Core Principles
 1.  **Server Components by Default:** Never add `'use client'` unless the component requires interactivity (hooks, event listeners).
-2.  **Server Actions for Mutations:** - Always use Server Actions (`actions/*.ts`) for DB writes.
+2.  **Server Actions for Mutations:**
+    - Always use Server Actions (`actions/*.ts`) for DB writes.
     - NEVER create API Routes (`app/api/...`) for standard CRUD operations.
     - Always wrap actions in `try/catch` and return standard response objects: `{ success: boolean, error?: string, data?: T }`.
 3.  **Caching & Revalidation:**
