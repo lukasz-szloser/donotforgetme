@@ -1,11 +1,13 @@
+import Link from "next/link";
+
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <header className="bg-white dark:bg-slate-800 shadow">
         <div className="container mx-auto px-4 py-4">
-          <a href="/" className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+          <Link href="/" className="text-2xl font-bold text-slate-900 dark:text-slate-100">
             Packing Helper
-          </a>
+          </Link>
         </div>
       </header>
       <main className="container mx-auto px-4 py-16">
@@ -55,19 +57,19 @@ export default function AboutPage() {
               Technology Stack
             </h2>
             <ul className="space-y-2 text-slate-600 dark:text-slate-400">
-              <li>• Next.js 14 with App Router</li>
+              <li>• Next.js 15 with App Router</li>
               <li>• TypeScript for type safety</li>
               <li>• Tailwind CSS for styling</li>
               <li>• Shadcn/UI for beautiful components</li>
               <li>• Supabase for backend and authentication</li>
             </ul>
             <div className="mt-8">
-              <a
+              <Link
                 href="/login"
                 className="inline-flex items-center justify-center px-8 py-3 text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors"
               >
                 Get Started
-              </a>
+              </Link>
             </div>
           </div>
         </div>

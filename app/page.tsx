@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
@@ -41,25 +43,25 @@ export default function Home() {
           {/* CTA Section */}
           <div className="mt-12 space-y-4">
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a
+              <Link
                 href="/login"
                 className="inline-flex items-center justify-center px-8 py-3 text-base font-medium rounded-lg text-white bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200 transition-colors"
               >
                 Get Started
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/about"
                 className="inline-flex items-center justify-center px-8 py-3 text-base font-medium rounded-lg text-slate-900 bg-white border-2 border-slate-300 hover:bg-slate-50 dark:text-slate-100 dark:bg-slate-800 dark:border-slate-600 dark:hover:bg-slate-700 transition-colors"
               >
                 Learn More
-              </a>
+              </Link>
             </div>
           </div>
 
           {/* Tech Stack Info */}
           <div className="mt-16 pt-8 border-t border-slate-200 dark:border-slate-700">
             <p className="text-sm text-slate-500 dark:text-slate-500">
-              Built with Next.js 14, TypeScript, Tailwind CSS, and Supabase
+              Built with Next.js 15, TypeScript, Tailwind CSS, and Supabase
             </p>
           </div>
         </div>
