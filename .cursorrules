@@ -1,117 +1,14 @@
-# Cursor IDE Rules for Packing Helper Application
+# Packing Helper - General Guidelines
 
-## Project Context
-This is a "Packing Helper" application built with Next.js 14, TypeScript, Tailwind CSS, and Shadcn/UI.
-The app helps users create and manage packing lists with recursive, multi-level to-do items.
-Backend: Supabase (Authentication + Realtime Database for collaboration).
+## Project Vision
+You are building "Packing Helper" - a mobile-first PWA for stress-free packing.
+Key UX: Recursive lists, Swipe gestures, "Packing Mode" (big UI), and Realtime collaboration.
 
-## Tech Stack
-- **Framework**: Next.js 14 with App Router
-- **Language**: TypeScript (strict mode)
-- **Styling**: Tailwind CSS
-- **UI Components**: Shadcn/UI
-- **Backend**: Supabase (Auth + Realtime DB)
-- **State Management**: React hooks and Supabase realtime subscriptions
-- **Code Quality**: ESLint + Prettier
+## Context Sources
+- Refer to `.cursor/rules/nextjs-server.mdc` for backend logic.
+- Refer to `.cursor/rules/supabase-data.mdc` for database/realtime.
+- Refer to `.cursor/rules/ui-ux.mdc` for frontend components.
+- Refer to `.ai/prd.md` for business logic.
 
-## Development Guidelines
-
-### Code Style
-- Use TypeScript strict mode
-- Prefer functional components with hooks
-- Use async/await for asynchronous operations
-- Follow mobile-first responsive design principles
-- Use Tailwind CSS utility classes for styling
-- Keep components small and focused (Single Responsibility Principle)
-
-### File Organization
-- `/app` - Next.js App Router pages and layouts
-- `/components` - Reusable React components
-  - `/ui` - Shadcn/UI components
-- `/lib` - Utility functions and Supabase client
-- `/types` - TypeScript type definitions
-- `/hooks` - Custom React hooks
-
-### Component Guidelines
-- Use Shadcn/UI components for common UI patterns
-- Create custom components in `/components` directory
-- Export components as default when they're the primary export
-- Use named exports for utility functions and multiple exports
-
-### Supabase Integration
-- Initialize Supabase client in `/lib/supabase.ts`
-- Use Supabase auth helpers for authentication
-- Implement Row Level Security (RLS) policies
-- Use realtime subscriptions for collaborative features
-
-### TypeScript
-- Define interfaces for all data structures
-- Use proper typing for API responses
-- Avoid using `any` type
-- Create type definitions in `/types` directory
-
-### Performance
-- Use Next.js Image component for images
-- Implement lazy loading for components when appropriate
-- Optimize for mobile devices first
-- Use Suspense boundaries for loading states
-
-### Accessibility
-- Use semantic HTML elements
-- Include proper ARIA labels
-- Ensure keyboard navigation works
-- Test with screen readers
-
-### Testing
-- Write unit tests for utility functions
-- Test components with user interactions
-- Validate form inputs
-- Test authentication flows
-
-## Common Patterns
-
-### Creating a new page
-1. Create file in `/app/[route]/page.tsx`
-2. Use proper metadata exports
-3. Follow mobile-first responsive design
-4. Implement loading and error states
-
-### Adding a Shadcn/UI component
-1. Use `npx shadcn-ui@latest add [component-name]`
-2. Components will be added to `/components/ui`
-3. Customize as needed while maintaining accessibility
-
-### Implementing authentication
-1. Use Supabase Auth helpers
-2. Protect routes with middleware
-3. Handle auth state in layout components
-4. Provide proper error messages
-
-### Database operations
-1. Use Supabase client from `/lib/supabase.ts`
-2. Implement proper error handling
-3. Use TypeScript types for data
-4. Add realtime subscriptions for collaborative features
-
-## Best Practices
-- Always validate user input
-- Handle loading and error states
-- Provide meaningful error messages
-- Keep security in mind (never expose API keys)
-- Follow the principle of least privilege
-- Write self-documenting code with clear naming
-- Add comments only when the code intent isn't clear
-- Keep dependencies up to date
-
-## Mobile-First Design
-- Start with mobile layout (320px+)
-- Add responsive breakpoints progressively
-- Touch-friendly UI (minimum 44x44px touch targets)
-- Consider thumb-friendly navigation zones
-- Optimize for slower connections
-
-## Collaboration Features
-- Use Supabase Realtime for live updates
-- Implement optimistic UI updates
-- Handle conflicts gracefully
-- Show user presence indicators
+## Critical Rule
+Always strictly follow **Next.js 16** conventions (Server Actions) as defined in the rules.

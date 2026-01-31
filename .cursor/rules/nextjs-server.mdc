@@ -1,0 +1,39 @@
+---
+description: Zasady dla Next.js 16 App Router, Server Actions i pobierania danych
+globs: app/**/*.{ts,tsx}, actions/**/*.ts, lib/**/*.ts
+---
+# Next.js 16 & Server Actions Standards
+
+## Core Principles
+1.  **Server Components by Default:** Never add `'use client'` unless the component requires interactivity (hooks, event listeners).
+2.  **Server Actions for Mutations:** - Always use Server Actions (`actions/*.ts`) for DB writes.
+    - NEVER create API Routes (`app/api/...`) for standard CRUD operations.
+    - Always wrap actions in `try/catch` and return standard response objects: `{ success: boolean, error?: string, data?: T }`.
+3.  **Caching & Revalidation:**
+    - Use `revalidatePath('/path')` immediately after a successful mutation in a Server Action.
+    - Assume aggressive caching by Next.js.
+
+## Code Patterns
+
+### Fetching Data (Server Side)
+Do not use `useEffect` or React Query for initial data fetch. Do it directly in the component:
+
+```typescript
+// Good
+export default async function Page() {
+  const { data } = await supabase.from('...').select()
+  return <List data={data} />
+}
+
+### Server Action Structure
+```typescript
+'use server'
+import { createClient } from '@/utils/supabase/server'
+import { revalidatePath } from 'next/cache'
+
+export async function updateItem(id: string, data: any) {
+  const supabase = createClient()
+  /* validate logic */
+  /* db logic */
+  revalidatePath('/list/[id]')
+}

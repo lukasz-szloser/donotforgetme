@@ -1,0 +1,30 @@
+---
+description: Zasady pracy z bazą danych Supabase, Realtime i Auth
+globs: **/supabase/**/*.{ts,tsx}, actions/**/*.ts, types/**/*.ts
+---
+
+# Supabase & Data Rules
+
+## Database Schema Awareness
+*Always refer to `schema.sql` (if available) or these table names:*
+- `packing_items` (Recursive: `parent_id` -> `id`)
+- `packing_lists`
+- `list_collaborators`
+- `profiles`
+
+## Data Access Patterns
+1.  **Clients:** Use `@/utils/supabase/server` for Server Components/Actions and `@/utils/supabase/client` for Client Components.
+2.  **Recursive Lists:**
+    - FETCH flat data from DB: `select * from packing_items where list_id = X`.
+    - TRANSFORM to tree structure in JavaScript (using a utility function).
+    - NEVER run recursive SQL queries inside a loop in Node.js.
+
+## Realtime & Collaboration
+1.  **Optimistic UI:** When mutating data, update the UI state *instantly*, then sync with Supabase.
+2.  **Channels:** For `packing_items`, listen to `postgres_changes`.
+    - `event: '*'` is usually best for collaborative lists.
+    - Filter by `list_id` to avoid over-fetching.
+
+## RLS & Security
+- Always ensure `owner_id` or `auth.uid()` checks are present.
+- When inviting users, insert into `list_collaborators`.
