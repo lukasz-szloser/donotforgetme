@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import { deleteList } from "@/actions/packing";
+import { getCollaborators } from "@/actions/collaboration";
 import { Button } from "@/components/ui/button";
 import { RealtimeListListener } from "@/components/packing/RealtimeListListener";
 import { PackingModeProvider } from "@/components/packing/PackingModeContext";
@@ -8,6 +9,8 @@ import { PackingModeToggle } from "@/components/packing/PackingModeToggle";
 import { ConditionalAddForm } from "@/components/packing/ConditionalAddForm";
 import { PackingList } from "@/components/packing/PackingList";
 import { AddItemForm } from "@/components/packing/AddItemForm";
+import { ShareListDialog } from "@/components/collaboration/ShareListDialog";
+import { CollaboratorAvatars } from "@/components/collaboration/CollaboratorAvatars";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import Link from "next/link";
 import type { Database } from "@/types/database";
@@ -72,6 +75,9 @@ export default async function ListPage({ params }: PageProps) {
   const checked = items?.filter((item) => item.checked).length || 0;
   const progress = total > 0 ? Math.round((checked / total) * 100) : 0;
 
+  // Fetch collaborators
+  const collaborators = await getCollaborators(id);
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       <RealtimeListListener listId={id} />
@@ -85,17 +91,28 @@ export default async function ListPage({ params }: PageProps) {
                 Powrót
               </Button>
             </Link>
-            {isOwner && (
-              <form action={deleteList}>
-                <input type="hidden" name="listId" value={id} />
-                <Button type="submit" variant="ghost" size="sm" className="gap-2 text-red-600">
-                  <Trash2 className="w-4 h-4" />
-                  Usuń listę
-                </Button>
-              </form>
-            )}
+            <div className="flex items-center gap-2">
+              <ShareListDialog
+                listId={id}
+                collaborators={collaborators}
+                isOwner={isOwner}
+                currentUserId={user.id}
+              />
+              {isOwner && (
+                <form action={deleteList}>
+                  <input type="hidden" name="listId" value={id} />
+                  <Button type="submit" variant="ghost" size="sm" className="gap-2 text-red-600">
+                    <Trash2 className="w-4 h-4" />
+                    Usuń listę
+                  </Button>
+                </form>
+              )}
+            </div>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{list.name}</h1>
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{list.name}</h1>
+            {collaborators.length > 0 && <CollaboratorAvatars collaborators={collaborators} />}
+          </div>
           {list.description && (
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{list.description}</p>
           )}
