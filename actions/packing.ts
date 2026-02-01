@@ -7,15 +7,26 @@ import { z } from "zod";
 import type { Database } from "@/types/database";
 import { applySmartCheck } from "@/lib/packing-logic";
 import { buildTreeFromFlatList } from "@/lib/utils";
+import { packingTemplates, type TemplateItem } from "@/lib/templates";
 
 type PackingList = Database["public"]["Tables"]["packing_lists"]["Row"];
 type PackingListInsert = Database["public"]["Tables"]["packing_lists"]["Insert"];
+type PackingListUpdate = Database["public"]["Tables"]["packing_lists"]["Update"];
 type PackingItem = Database["public"]["Tables"]["packing_items"]["Row"];
 type PackingItemInsert = Database["public"]["Tables"]["packing_items"]["Insert"];
 type PackingItemUpdate = Database["public"]["Tables"]["packing_items"]["Update"];
 
 // Validation schemas
 const createListSchema = z.object({
+  name: z
+    .string()
+    .min(1, "Nazwa listy jest wymagana")
+    .max(100, "Nazwa może mieć maksimum 100 znaków"),
+  description: z.string().max(500, "Opis może mieć maksimum 500 znaków").optional(),
+});
+
+const updateListSchema = z.object({
+  listId: z.string().uuid("Nieprawidłowe ID listy"),
   name: z
     .string()
     .min(1, "Nazwa listy jest wymagana")
@@ -35,6 +46,24 @@ const addItemSchema = z.object({
 const toggleItemSchema = z.object({
   itemId: z.string().uuid("Nieprawidłowe ID elementu"),
   checked: z.boolean(),
+});
+
+const updateItemSchema = z.object({
+  itemId: z.string().uuid("Nieprawidłowe ID elementu"),
+  title: z
+    .string()
+    .min(1, "Tytuł elementu jest wymagany")
+    .max(200, "Tytuł może mieć maksimum 200 znaków"),
+});
+
+const reorderItemsSchema = z.object({
+  listId: z.string().uuid("Nieprawidłowe ID listy"),
+  items: z.array(
+    z.object({
+      id: z.string().uuid("Nieprawidłowe ID elementu"),
+      position: z.number().int().min(0, "Pozycja musi być nieujemna"),
+    })
+  ),
 });
 
 const deleteItemSchema = z.object({
@@ -75,6 +104,42 @@ async function hasListAccess(listId: string, userId: string): Promise<boolean> {
     ? (data as unknown as { list_collaborators: { user_id: string }[] }).list_collaborators
     : [];
   return collaborators.some((c) => c.user_id === userId);
+}
+
+/**
+ * Create items recursively from template
+ */
+async function createItemsFromTemplate(
+  supabase: any,
+  listId: string,
+  items: TemplateItem[],
+  parentId: string | null = null,
+  startPosition: number = 0
+): Promise<void> {
+  for (let i = 0; i < items.length; i++) {
+    const templateItem = items[i];
+    const itemData: PackingItemInsert = {
+      list_id: listId,
+      parent_id: parentId,
+      title: templateItem.title,
+      position: startPosition + i,
+    };
+
+    const { data: newItem, error } = (await supabase
+      .from("packing_items")
+      .insert(itemData as any)
+      .select("id")
+      .single()) as { data: { id: string } | null; error: unknown };
+
+    if (error || !newItem) {
+      throw new Error("Nie udało się utworzyć elementu z szablonu");
+    }
+
+    // Recursively create children
+    if (templateItem.children && templateItem.children.length > 0) {
+      await createItemsFromTemplate(supabase, listId, templateItem.children, newItem.id, 0);
+    }
+  }
 }
 
 /**
@@ -126,6 +191,128 @@ export async function createList(formData: FormData): Promise<ActionResponse<{ i
       return { success: false, error: error.errors[0]?.message || "Błąd walidacji" };
     }
     console.error("Error in createList:", error);
+    return { success: false, error: "Nieoczekiwany błąd" };
+  }
+}
+
+/**
+ * Create a new packing list from template
+ */
+export async function createFromTemplate(
+  templateId: string
+): Promise<ActionResponse<{ id: string }>> {
+  try {
+    const template = packingTemplates.find((t) => t.id === templateId);
+    if (!template) {
+      return { success: false, error: "Szablon nie został znaleziony" };
+    }
+
+    const supabase = await createClient();
+
+    // Get current user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: "Musisz być zalogowany" };
+    }
+
+    // Create list
+    const listData: PackingListInsert = {
+      name: template.name,
+      description: template.description,
+      owner_id: user.id,
+    };
+
+    const { data, error } = (await supabase
+      .from("packing_lists")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .insert(listData as any)
+      .select("id")
+      .single()) as { data: { id: string } | null; error: unknown };
+
+    if (error || !data) {
+      console.error("Error creating list from template:", error);
+      return { success: false, error: "Nie udało się utworzyć listy" };
+    }
+
+    // Create items from template
+    await createItemsFromTemplate(supabase, data.id, template.items);
+
+    revalidatePath("/dashboard");
+    return { success: true, data: { id: data.id } };
+  } catch (error) {
+    console.error("Error in createFromTemplate:", error);
+    return { success: false, error: "Nieoczekiwany błąd" };
+  }
+}
+
+/**
+ * Update a packing list (only owner can update)
+ */
+export async function updateList(formData: FormData): Promise<ActionResponse> {
+  try {
+    const rawData = {
+      listId: formData.get("listId"),
+      name: formData.get("name"),
+      description: formData.get("description") || undefined,
+    };
+
+    const validatedData = updateListSchema.parse(rawData);
+    const supabase = await createClient();
+
+    // Get current user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: "Musisz być zalogowany" };
+    }
+
+    // Check if user is owner
+    const { data: list, error: fetchError } = (await supabase
+      .from("packing_lists")
+      .select("owner_id")
+      .eq("id", validatedData.listId)
+      .single()) as { data: Pick<PackingList, "owner_id"> | null; error: unknown };
+
+    if (fetchError || !list) {
+      return { success: false, error: "Lista nie istnieje" };
+    }
+
+    if (list.owner_id !== user.id) {
+      return { success: false, error: "Tylko właściciel może edytować listę" };
+    }
+
+    // Update list
+    const result = await supabase
+      .from("packing_lists")
+      // @ts-ignore - Supabase generated types issue: update parameter typed as 'never'
+      .update({
+        name: validatedData.name,
+        description: validatedData.description,
+      })
+      .eq("id", validatedData.listId);
+
+    const { error } = result as { error: unknown };
+
+    if (error) {
+      console.error("Error updating list:", error);
+      return { success: false, error: "Nie udało się zaktualizować listy" };
+    }
+
+    revalidatePath(`/lists/${validatedData.listId}`);
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return { success: false, error: error.errors[0]?.message || "Błąd walidacji" };
+    }
+    console.error("Error in updateList:", error);
     return { success: false, error: "Nieoczekiwany błąd" };
   }
 }
@@ -326,6 +513,124 @@ export async function toggleItemChecked(itemId: string, checked: boolean): Promi
       return { success: false, error: error.errors[0]?.message || "Błąd walidacji" };
     }
     console.error("Error in toggleItemChecked:", error);
+    return { success: false, error: "Nieoczekiwany błąd" };
+  }
+}
+
+/**
+ * Update a packing item title
+ */
+export async function updateItem(formData: FormData): Promise<ActionResponse> {
+  try {
+    const rawData = {
+      itemId: formData.get("itemId"),
+      title: formData.get("title"),
+    };
+
+    const validatedData = updateItemSchema.parse(rawData);
+    const supabase = await createClient();
+
+    // Get current user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: "Musisz być zalogowany" };
+    }
+
+    // Get item's list_id for access check
+    const { data: item, error: fetchError } = (await supabase
+      .from("packing_items")
+      .select("list_id")
+      .eq("id", validatedData.itemId)
+      .single()) as { data: Pick<PackingItem, "list_id"> | null; error: unknown };
+
+    if (fetchError || !item) {
+      return { success: false, error: "Element nie istnieje" };
+    }
+
+    // Check access
+    const hasAccess = await hasListAccess(item.list_id, user.id);
+    if (!hasAccess) {
+      return { success: false, error: "Brak dostępu" };
+    }
+
+    // Update item title
+    const result = await supabase
+      .from("packing_items")
+      // @ts-ignore - Supabase generated types issue: update parameter typed as 'never'
+      .update({ title: validatedData.title })
+      .eq("id", validatedData.itemId);
+
+    const { error } = result as { error: unknown };
+
+    if (error) {
+      console.error("Error updating item:", error);
+      return { success: false, error: "Nie udało się zaktualizować elementu" };
+    }
+
+    revalidatePath(`/lists/${item.list_id}`);
+    return { success: true };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return { success: false, error: error.errors[0]?.message || "Błąd walidacji" };
+    }
+    console.error("Error in updateItem:", error);
+    return { success: false, error: "Nieoczekiwany błąd" };
+  }
+}
+
+/**
+ * Reorder items (drag & drop)
+ */
+export async function reorderItems(
+  listId: string,
+  items: { id: string; position: number }[]
+): Promise<ActionResponse> {
+  try {
+    const validatedData = reorderItemsSchema.parse({ listId, items });
+    const supabase = await createClient();
+
+    // Get current user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: "Musisz być zalogowany" };
+    }
+
+    // Check access
+    const hasAccess = await hasListAccess(validatedData.listId, user.id);
+    if (!hasAccess) {
+      return { success: false, error: "Brak dostępu" };
+    }
+
+    // Batch update positions
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updates = validatedData.items.map((item) => {
+      const builder: any = supabase.from("packing_items");
+      return builder.update({ position: item.position } as any).eq("id", item.id);
+    });
+
+    const results = await Promise.all(updates);
+    const hasError = results.some((result) => result.error);
+
+    if (hasError) {
+      console.error("Error reordering items:", results.find((r) => r.error)?.error);
+      return { success: false, error: "Nie udało się zmienić kolejności" };
+    }
+
+    revalidatePath(`/lists/${validatedData.listId}`);
+    return { success: true };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return { success: false, error: error.errors[0]?.message || "Błąd walidacji" };
+    }
+    console.error("Error in reorderItems:", error);
     return { success: false, error: "Nieoczekiwany błąd" };
   }
 }

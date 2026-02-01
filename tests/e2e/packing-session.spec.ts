@@ -143,6 +143,8 @@ test.describe("Packing Session - Card Mode (UI Test Route)", () => {
 // These tests require the full page with PackingModeWrapper
 // Skipped since UI test route focuses on PackingSession component only
 test.describe.skip("Packing Mode Toggle (requires full page)", () => {
+  const MOCK_LIST_ID = "test-list-id"; // Only used in skipped tests
+
   test.beforeEach(async ({ page }) => {
     // Would need a test route that includes PackingModeWrapper
   });

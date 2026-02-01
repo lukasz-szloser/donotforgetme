@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
-import { Check, Trash2, ChevronRight, Plus } from "lucide-react";
-import { toggleItemChecked, deleteItem, addItem } from "@/actions/packing";
+import { Check, Trash2, ChevronRight, Plus, Pencil } from "lucide-react";
+import { toggleItemChecked, deleteItem, addItem, updateItem } from "@/actions/packing";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
@@ -37,7 +37,10 @@ export function PackingItem({ item, depth = 0, maxVisibleDepth = 5 }: PackingIte
   const [isExpanded, setIsExpanded] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [isAddingChild, setIsAddingChild] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [showSwipeMenu, setShowSwipeMenu] = useState(false);
   const [childTitle, setChildTitle] = useState("");
+  const [editTitle, setEditTitle] = useState(item.title);
   const x = useMotionValue(0);
 
   // Swipe indicators
@@ -85,6 +88,26 @@ export function PackingItem({ item, depth = 0, maxVisibleDepth = 5 }: PackingIte
     });
   };
 
+  const handleEdit = async () => {
+    if (!editTitle.trim()) {
+      toast.error("Podaj nazwę elementu");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("itemId", item.id);
+    formData.append("title", editTitle);
+
+    const result = await updateItem(formData);
+
+    if (!result.success) {
+      toast.error(result.error || "Nie udało się zaktualizować");
+    } else {
+      toast.success("Element zaktualizowany");
+      setIsEditing(false);
+    }
+  };
+
   const handleAddChild = async () => {
     if (!childTitle.trim()) {
       toast.error("Podaj nazwę pod-elementu");
@@ -122,10 +145,8 @@ export function PackingItem({ item, depth = 0, maxVisibleDepth = 5 }: PackingIte
       handleToggle();
       x.set(0);
     } else if (offsetX < -SWIPE_THRESHOLD) {
-      // Swipe left - delete
-      if (confirm("Czy na pewno chcesz usunąć ten element?")) {
-        handleDelete();
-      }
+      // Swipe left - show edit/delete menu
+      setShowSwipeMenu(true);
       x.set(0);
     } else {
       // Bounce back
@@ -148,12 +169,12 @@ export function PackingItem({ item, depth = 0, maxVisibleDepth = 5 }: PackingIte
       <div className="relative overflow-hidden">
         {!isPackingMode && (
           <>
-            {/* Left indicator (delete) */}
+            {/* Left indicator (edit/delete menu) */}
             <motion.div
               style={{ opacity: swipeLeftOpacity }}
-              className="absolute left-0 top-0 bottom-0 w-16 flex items-center justify-center bg-red-500 text-white"
+              className="absolute left-0 top-0 bottom-0 w-16 flex items-center justify-center bg-slate-600 text-white"
             >
-              <Trash2 className="w-5 h-5" />
+              <Pencil className="w-5 h-5" />
             </motion.div>
 
             {/* Right indicator (check) */}
@@ -290,6 +311,90 @@ export function PackingItem({ item, depth = 0, maxVisibleDepth = 5 }: PackingIte
               className="bg-blue-600 hover:bg-blue-700"
             >
               Dodaj
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog for editing item */}
+      <Dialog open={isEditing} onOpenChange={setIsEditing}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edytuj element</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Input
+                type="text"
+                placeholder="Nazwa elementu..."
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleEdit();
+                  }
+                }}
+                autoFocus
+                className="min-h-[48px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsEditing(false);
+                setEditTitle(item.title);
+              }}
+            >
+              Anuluj
+            </Button>
+            <Button
+              onClick={handleEdit}
+              disabled={!editTitle.trim()}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Zapisz
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Swipe menu dialog */}
+      <Dialog open={showSwipeMenu} onOpenChange={setShowSwipeMenu}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Akcje dla: {item.title}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Button
+              onClick={() => {
+                setShowSwipeMenu(false);
+                setIsEditing(true);
+              }}
+              className="w-full justify-start min-h-[48px]"
+              variant="outline"
+            >
+              <Pencil className="w-5 h-5 mr-2" />
+              Edytuj
+            </Button>
+            <Button
+              onClick={() => {
+                setShowSwipeMenu(false);
+                if (confirm("Czy na pewno chcesz usunąć ten element?")) {
+                  handleDelete();
+                }
+              }}
+              className="w-full justify-start min-h-[48px]"
+              variant="outline"
+            >
+              <Trash2 className="w-5 h-5 mr-2 text-red-500" />
+              <span className="text-red-500">Usuń</span>
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSwipeMenu(false)}>
+              Anuluj
             </Button>
           </DialogFooter>
         </DialogContent>

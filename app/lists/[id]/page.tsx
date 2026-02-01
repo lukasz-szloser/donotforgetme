@@ -12,6 +12,7 @@ import { AddItemForm } from "@/components/packing/AddItemForm";
 import { ShareListDialog } from "@/components/collaboration/ShareListDialog";
 import { CollaboratorAvatars } from "@/components/collaboration/CollaboratorAvatars";
 import { PackingModeWrapper } from "@/components/packing/PackingModeWrapper";
+import { EditListDialog } from "@/components/packing/EditListDialog";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import Link from "next/link";
 import type { Database } from "@/types/database";
@@ -100,11 +101,19 @@ export default async function ListPage({ params }: PageProps) {
               </Button>
             </Link>
             <div className="flex items-center gap-2">
+              {isOwner && (
+                <EditListDialog
+                  listId={id}
+                  currentName={list.name}
+                  currentDescription={list.description}
+                />
+              )}
               <ShareListDialog
                 listId={id}
                 collaborators={collaborators}
                 isOwner={isOwner}
                 currentUserId={user.id}
+                isPublic={list.is_public}
               />
               {isOwner && (
                 <form action={deleteList}>

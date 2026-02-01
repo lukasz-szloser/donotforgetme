@@ -4,6 +4,7 @@ import { logout } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CreateListButton } from "@/components/packing/CreateListButton";
+import { TemplatesSection } from "@/components/packing/TemplatesSection";
 import Link from "next/link";
 import type { Database } from "@/types/database";
 
@@ -86,6 +87,8 @@ export default async function DashboardPage() {
               Zarządzaj swoimi listami pakowania w jednym miejscu.
             </p>
           </div>
+
+          <TemplatesSection />
 
           <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <h3 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">

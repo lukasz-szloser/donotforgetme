@@ -6,6 +6,7 @@ import type { Database, ListCollaboratorInsert } from "@/types/database";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 type ListCollaborator = Database["public"]["Tables"]["list_collaborators"]["Row"];
+type PackingListUpdate = Database["public"]["Tables"]["packing_lists"]["Update"];
 
 export interface CollaboratorWithProfile {
   user_id: string;
@@ -185,4 +186,75 @@ export async function getCollaborators(listId: string): Promise<CollaboratorWith
       avatar_url: collab.profiles?.avatar_url || null,
     },
   }));
+}
+
+/**
+ * Toggle public access for a list (share via link)
+ * Only the list owner can toggle public access
+ */
+export async function togglePublicAccess(listId: string, isPublic: boolean) {
+  const supabase = await createClient();
+
+  // Get current user
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return { success: false, error: "Nie jesteś zalogowany" };
+  }
+
+  // Check if current user is the list owner
+  const { data: list, error: listError } = await supabase
+    .from("packing_lists")
+    .select("owner_id")
+    .eq("id", listId)
+    .single<{ owner_id: string }>();
+
+  if (listError || !list) {
+    return { success: false, error: "Lista nie została znaleziona" };
+  }
+
+  if (list.owner_id !== user.id) {
+    return { success: false, error: "Tylko właściciel może zmienić publiczny dostęp" };
+  }
+
+  // Update is_public field
+  const result = await supabase
+    .from("packing_lists")
+    // @ts-ignore - Supabase generated types issue: update parameter typed as 'never'
+    .update({ is_public: isPublic })
+    .eq("id", listId);
+
+  const { error: updateError } = result as { error: unknown };
+
+  if (updateError) {
+    console.error("Error toggling public access:", updateError);
+    return { success: false, error: "Nie udało się zmienić ustawień dostępu" };
+  }
+
+  revalidatePath(`/lists/${listId}`);
+  return { success: true, error: null };
+}
+
+/**
+ * Get public list data (for anonymous users with link)
+ * Returns null if list is not public
+ */
+export async function getPublicList(listId: string) {
+  const supabase = await createClient();
+
+  const { data: list, error } = await supabase
+    .from("packing_lists")
+    .select("id, name, description, is_public")
+    .eq("id", listId)
+    .eq("is_public", true)
+    .single();
+
+  if (error || !list) {
+    return null;
+  }
+
+  return list;
 }

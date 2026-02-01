@@ -1,10 +1,12 @@
 "use client";
 
 import { PackingSessionTest } from "@/components/packing/PackingSessionTest";
-import type { PackingItem } from "@/types";
+import type { Database } from "@/types/database";
+
+type PackingItemRow = Database["public"]["Tables"]["packing_items"]["Row"];
 
 // Mock data for E2E tests - matches test expectations
-const mockItems: PackingItem[] = [
+const mockItems: PackingItemRow[] = [
   {
     id: "item-1",
     title: "Pasta do zębów",

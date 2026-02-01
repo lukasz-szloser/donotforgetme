@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { buildTreeFromFlatList } from "@/lib/utils";
-import { PackingItem } from "./PackingItem";
+import { SortablePackingList } from "./SortablePackingList";
 import type { Database } from "@/types/database";
 
 type PackingItemRow = Database["public"]["Tables"]["packing_items"]["Row"];
@@ -35,11 +35,5 @@ export async function PackingList({ listId }: PackingListProps) {
   // Build tree structure
   const tree = buildTreeFromFlatList(items as PackingItemRow[]);
 
-  return (
-    <div className="divide-y divide-slate-200">
-      {tree.map((item) => (
-        <PackingItem key={item.id} item={item} />
-      ))}
-    </div>
-  );
+  return <SortablePackingList items={tree} listId={listId} />;
 }
