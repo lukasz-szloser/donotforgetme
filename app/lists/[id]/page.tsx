@@ -118,7 +118,7 @@ export default async function ListPage({ params }: PageProps) {
 
       <PackingModeProvider isPackingMode={false}>
         <PackingModeToggle />
-        
+
         <main className="container mx-auto px-0 pb-24">
           <PackingList listId={id} />
         </main>

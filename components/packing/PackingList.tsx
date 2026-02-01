@@ -20,11 +20,7 @@ export async function PackingList({ listId }: PackingListProps) {
     .order("position", { ascending: true });
 
   if (error || !items) {
-    return (
-      <div className="p-4 text-center text-slate-500">
-        Nie udało się załadować elementów
-      </div>
-    );
+    return <div className="p-4 text-center text-slate-500">Nie udało się załadować elementów</div>;
   }
 
   if (items.length === 0) {
@@ -42,10 +38,7 @@ export async function PackingList({ listId }: PackingListProps) {
   return (
     <div className="divide-y divide-slate-200">
       {tree.map((item) => (
-        <PackingItem 
-          key={item.id} 
-          item={item}
-        />
+        <PackingItem key={item.id} item={item} />
       ))}
     </div>
   );

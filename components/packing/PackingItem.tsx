@@ -31,11 +31,7 @@ interface PackingItemProps {
 const SWIPE_THRESHOLD = 50;
 const MAX_SWIPE = 100;
 
-export function PackingItem({ 
-  item, 
-  depth = 0, 
-  maxVisibleDepth = 5
-}: PackingItemProps) {
+export function PackingItem({ item, depth = 0, maxVisibleDepth = 5 }: PackingItemProps) {
   const { isPackingMode } = usePackingMode();
   const [isChecked, setIsChecked] = useState(item.checked);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -50,7 +46,13 @@ export function PackingItem({
   const backgroundColor = useTransform(
     x,
     [-MAX_SWIPE, -SWIPE_THRESHOLD, 0, SWIPE_THRESHOLD, MAX_SWIPE],
-    ["rgb(239 68 68)", "rgb(248 113 113)", "rgb(255 255 255)", "rgb(134 239 172)", "rgb(74 222 128)"]
+    [
+      "rgb(239 68 68)",
+      "rgb(248 113 113)",
+      "rgb(255 255 255)",
+      "rgb(134 239 172)",
+      "rgb(74 222 128)",
+    ]
   );
 
   const hasChildren = item.children && item.children.length > 0;
@@ -95,7 +97,7 @@ export function PackingItem({
     formData.append("title", childTitle);
 
     const result = await addItem(formData);
-    
+
     if (!result.success) {
       toast.error(result.error || "Nie udało się dodać pod-elementu");
     } else {
@@ -193,13 +195,13 @@ export function PackingItem({
             className={cn(
               "flex-shrink-0 rounded border-2 flex items-center justify-center transition-all",
               isPackingMode ? "w-8 h-8" : "w-6 h-6",
-              isChecked
-                ? "bg-blue-600 border-blue-600"
-                : "border-slate-300 hover:border-blue-500"
+              isChecked ? "bg-blue-600 border-blue-600" : "border-slate-300 hover:border-blue-500"
             )}
             type="button"
           >
-            {isChecked && <Check className={cn(isPackingMode ? "w-5 h-5" : "w-4 h-4", "text-white")} />}
+            {isChecked && (
+              <Check className={cn(isPackingMode ? "w-5 h-5" : "w-4 h-4", "text-white")} />
+            )}
           </button>
 
           {/* Title */}
@@ -239,10 +241,7 @@ export function PackingItem({
               type="button"
             >
               <ChevronRight
-                className={cn(
-                  "w-5 h-5 transition-transform",
-                  isExpanded && "rotate-90"
-                )}
+                className={cn("w-5 h-5 transition-transform", isExpanded && "rotate-90")}
               />
             </button>
           )}

@@ -18,11 +18,7 @@ export function PackingModeToggle() {
             Uproszczony widok - tylko zaznaczanie elementów
           </p>
         </Label>
-        <Switch
-          id="packing-mode"
-          checked={isPackingMode}
-          onCheckedChange={setIsPackingMode}
-        />
+        <Switch id="packing-mode" checked={isPackingMode} onCheckedChange={setIsPackingMode} />
       </div>
     </div>
   );

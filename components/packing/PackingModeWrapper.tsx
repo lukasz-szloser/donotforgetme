@@ -11,10 +11,7 @@ interface PackingModeWrapperProps {
   addItemForm: ReactNode;
 }
 
-export function PackingModeWrapper({ 
-  children,
-  addItemForm
-}: PackingModeWrapperProps) {
+export function PackingModeWrapper({ children, addItemForm }: PackingModeWrapperProps) {
   const [isPackingMode, setIsPackingMode] = useState(false);
 
   return (
@@ -29,18 +26,12 @@ export function PackingModeWrapper({
               Uproszczony widok - tylko zaznaczanie elementów
             </p>
           </Label>
-          <Switch
-            id="packing-mode"
-            checked={isPackingMode}
-            onCheckedChange={setIsPackingMode}
-          />
+          <Switch id="packing-mode" checked={isPackingMode} onCheckedChange={setIsPackingMode} />
         </div>
       </div>
 
       <PackingModeProvider isPackingMode={isPackingMode}>
-        <main className="container mx-auto px-0 pb-24">
-          {children}
-        </main>
+        <main className="container mx-auto px-0 pb-24">{children}</main>
       </PackingModeProvider>
 
       {/* Fixed bottom add item form - hidden in packing mode */}

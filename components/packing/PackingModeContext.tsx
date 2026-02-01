@@ -21,7 +21,10 @@ interface PackingModeProviderProps {
   children: ReactNode;
 }
 
-export function PackingModeProvider({ isPackingMode: initialMode = false, children }: PackingModeProviderProps) {
+export function PackingModeProvider({
+  isPackingMode: initialMode = false,
+  children,
+}: PackingModeProviderProps) {
   const [isPackingMode, setIsPackingMode] = useState(initialMode);
 
   return (
