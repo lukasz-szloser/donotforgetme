@@ -2,6 +2,10 @@ import { describe, it, expect } from "vitest";
 import { buildTreeFromFlatList } from "@/lib/utils";
 import type { PackingItem } from "@/types/database";
 
+type PackingItemWithChildren = PackingItem & {
+  children?: PackingItemWithChildren[];
+};
+
 describe("buildTreeFromFlatList", () => {
   it("should convert flat list to tree structure", () => {
     const flatList: PackingItem[] = [
@@ -140,7 +144,7 @@ describe("buildTreeFromFlatList", () => {
       },
     ];
 
-    const tree = buildTreeFromFlatList(flatList);
+    const tree = buildTreeFromFlatList(flatList) as PackingItemWithChildren[];
 
     expect(tree).toHaveLength(1);
     expect(tree[0].title).toBe("Level 1");

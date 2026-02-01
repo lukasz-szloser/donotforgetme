@@ -253,6 +253,7 @@ npm run test:unit:watch
 ```
 
 **Example test coverage:**
+
 - `buildTreeFromFlatList` function for converting flat lists to tree structures
 - Handling empty lists
 - Deep nesting support (up to 5 levels)
@@ -278,6 +279,7 @@ npx playwright test --ui
 ```
 
 **Smoke tests include:**
+
 - Login page redirect for unauthenticated users
 - Login form elements visibility
 - Basic page structure and meta tags
