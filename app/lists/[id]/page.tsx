@@ -148,7 +148,9 @@ export default async function ListPage({ params }: PageProps) {
                 <h1 className="text-xl sm:text-2xl font-bold truncate">{list.name}</h1>
               </div>
               {list.description && (
-                <p className="text-sm text-muted-foreground ml-13 line-clamp-2">{list.description}</p>
+                <p className="text-sm text-muted-foreground ml-13 line-clamp-2">
+                  {list.description}
+                </p>
               )}
             </div>
             {collaborators.length > 0 && (
