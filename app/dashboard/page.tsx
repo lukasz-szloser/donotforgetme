@@ -4,7 +4,9 @@ import { logout } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CreateListButton } from "@/components/packing/CreateListButton";
+import { TemplatesSection } from "@/components/packing/TemplatesSection";
 import Link from "next/link";
+import { Luggage, LogOut, ChevronRight, Package } from "lucide-react";
 import type { Database } from "@/types/database";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -33,6 +35,7 @@ export default async function DashboardPage() {
 
   // Fallback to email from auth if profile doesn't exist
   const displayName = profile?.full_name || profile?.email || user.email || "Użytkowniku";
+  const firstName = displayName.split(" ")[0];
 
   // Fetch user's packing lists
   const { data: lists } = (await supabase
@@ -61,66 +64,92 @@ export default async function DashboardPage() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-      <header className="bg-white dark:bg-slate-800 shadow">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Packing Helper</h1>
+    <div className="min-h-screen gradient-page">
+      {/* Header */}
+      <header className="sticky top-0 z-50 glass border-b border-border/50">
+        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Luggage className="w-5 h-5 text-primary" />
+            </div>
+            <span className="text-lg font-bold hidden sm:inline">Packing Helper</span>
+          </Link>
           <form action={logout}>
             <Button
               type="submit"
               variant="ghost"
-              className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+              size="sm"
+              className="text-muted-foreground hover:text-foreground gap-2"
             >
-              Wyloguj
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Wyloguj</span>
             </Button>
           </form>
         </div>
       </header>
+
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-              Witaj, {displayName}!
-            </h2>
-            <p className="text-slate-600 dark:text-slate-400">
+          {/* Welcome Section */}
+          <div className="mb-10 animate-slide-up">
+            <h1 className="text-3xl md:text-4xl font-bold mb-2">
+              Witaj, <span className="text-gradient">{firstName}</span>!
+            </h1>
+            <p className="text-muted-foreground text-lg">
               Zarządzaj swoimi listami pakowania w jednym miejscu.
             </p>
           </div>
 
-          <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h3 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-              Moje listy pakowania
-            </h3>
+          {/* Templates Section */}
+          <TemplatesSection />
+
+          {/* Lists Header */}
+          <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <h2 className="text-2xl font-semibold">Moje listy pakowania</h2>
             <CreateListButton />
           </div>
 
+          {/* Lists Grid */}
           {listsWithStats.length === 0 ? (
-            <div className="bg-white dark:bg-slate-800 p-12 rounded-lg shadow text-center">
-              <p className="text-lg text-slate-600 dark:text-slate-400 mb-4">
-                Nie masz jeszcze żadnych list pakowania
+            <Card className="p-12 text-center shadow-soft border-border/50 animate-fade-in">
+              <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-muted flex items-center justify-center">
+                <Package className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Brak list pakowania</h3>
+              <p className="text-muted-foreground mb-6">
+                Utwórz pierwszą listę lub wybierz jeden z szablonów powyżej.
               </p>
-              <p className="text-sm text-slate-500 dark:text-slate-500">
-                Kliknij &quot;Nowa lista&quot;, aby utworzyć pierwszą listę
-              </p>
-            </div>
+              <CreateListButton />
+            </Card>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2 stagger-children">
               {listsWithStats.map((list) => (
                 <Link key={list.id} href={`/lists/${list.id}`}>
-                  <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
-                    <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                      {list.name}
-                    </h3>
+                  <Card className="group p-6 shadow-soft border-border/50 card-hover card-interactive">
+                    <div className="flex items-start justify-between mb-3">
+                      <h3 className="text-xl font-semibold group-hover:text-primary transition-colors">
+                        {list.name}
+                      </h3>
+                      <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                    </div>
+
                     {list.description && (
-                      <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
                         {list.description}
                       </p>
                     )}
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-slate-500 dark:text-slate-500">
-                        {list.total} pozycji • {list.checked} spakowanych
-                      </span>
-                      <span className="text-blue-600 font-medium">{list.progress}% gotowe</span>
+
+                    {/* Progress Bar */}
+                    <div className="space-y-2">
+                      <div className="progress-bar">
+                        <div className="progress-fill" style={{ width: `${list.progress}%` }} />
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          {list.checked} / {list.total} spakowanych
+                        </span>
+                        <span className="font-semibold text-primary">{list.progress}%</span>
+                      </div>
                     </div>
                   </Card>
                 </Link>

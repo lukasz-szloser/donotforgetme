@@ -2,6 +2,11 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
+  // Bypass authentication for E2E test routes
+  if (request.nextUrl.pathname.startsWith("/e2e/")) {
+    return NextResponse.next();
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -46,6 +51,31 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Check if accessing a public list
+  if (request.nextUrl.pathname.match(/^\/lists\/[a-f0-9-]+$/)) {
+    if (!user) {
+      // Extract list ID from path
+      const listId = request.nextUrl.pathname.split("/")[2];
+
+      // Check if list is public
+      const { data: list } = await supabase
+        .from("packing_lists")
+        .select("is_public")
+        .eq("id", listId)
+        .single();
+
+      if (list?.is_public) {
+        // Allow access to public lists without authentication
+        return response;
+      }
+
+      // If not public, redirect to login
+      const redirectUrl = new URL("/login", request.url);
+      redirectUrl.searchParams.set("redirect", request.nextUrl.pathname);
+      return NextResponse.redirect(redirectUrl);
+    }
+  }
 
   // Protect /dashboard routes
   if (request.nextUrl.pathname.startsWith("/dashboard")) {

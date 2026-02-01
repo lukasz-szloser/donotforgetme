@@ -6,10 +6,13 @@ A modern, collaborative packing list application built with Next.js 14, TypeScri
 
 - 📋 **Multi-level Lists**: Create recursive, nested packing lists for better organization
 - 🔄 **Real-time Collaboration**: Share lists and see updates instantly with Supabase Realtime
+- 🧠 **Smart Check**: Automatic parent-child synchronization (Bubble Up/Down logic)
+- 🎴 **Packing Session**: Card-based interface for focused packing (Tinder-style swipe)
 - 📱 **Mobile-First Design**: Intuitive interface optimized for mobile devices
 - 🎨 **Beautiful UI**: Built with Shadcn/UI components and Tailwind CSS
 - 🔐 **Secure Authentication**: User authentication powered by Supabase Auth
 - ⚡ **Type-Safe**: Full TypeScript support for better developer experience
+- ✅ **Fully Tested**: Comprehensive unit tests (Vitest) and E2E tests (Playwright)
 
 ## Tech Stack
 
