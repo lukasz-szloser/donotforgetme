@@ -1,13 +1,15 @@
 "use client";
 
-import { createContext, useContext, ReactNode } from "react";
+import { createContext, useContext, ReactNode, useState } from "react";
 
 interface PackingModeContextType {
   isPackingMode: boolean;
+  setIsPackingMode: (mode: boolean) => void;
 }
 
 const PackingModeContext = createContext<PackingModeContextType>({
   isPackingMode: false,
+  setIsPackingMode: () => {},
 });
 
 export function usePackingMode() {
@@ -15,13 +17,15 @@ export function usePackingMode() {
 }
 
 interface PackingModeProviderProps {
-  isPackingMode: boolean;
+  isPackingMode?: boolean;
   children: ReactNode;
 }
 
-export function PackingModeProvider({ isPackingMode, children }: PackingModeProviderProps) {
+export function PackingModeProvider({ isPackingMode: initialMode = false, children }: PackingModeProviderProps) {
+  const [isPackingMode, setIsPackingMode] = useState(initialMode);
+
   return (
-    <PackingModeContext.Provider value={{ isPackingMode }}>
+    <PackingModeContext.Provider value={{ isPackingMode, setIsPackingMode }}>
       {children}
     </PackingModeContext.Provider>
   );

@@ -3,7 +3,9 @@ import { redirect, notFound } from "next/navigation";
 import { deleteList } from "@/actions/packing";
 import { Button } from "@/components/ui/button";
 import { RealtimeListListener } from "@/components/packing/RealtimeListListener";
-import { PackingModeWrapper } from "@/components/packing/PackingModeWrapper";
+import { PackingModeProvider } from "@/components/packing/PackingModeContext";
+import { PackingModeToggle } from "@/components/packing/PackingModeToggle";
+import { ConditionalAddForm } from "@/components/packing/ConditionalAddForm";
 import { PackingList } from "@/components/packing/PackingList";
 import { AddItemForm } from "@/components/packing/AddItemForm";
 import { ArrowLeft, Trash2 } from "lucide-react";
@@ -114,11 +116,18 @@ export default async function ListPage({ params }: PageProps) {
         </div>
       </header>
 
-      <PackingModeWrapper
-        addItemForm={<AddItemForm listId={id} />}
-      >
-        <PackingList listId={id} />
-      </PackingModeWrapper>
+      <PackingModeProvider isPackingMode={false}>
+        <PackingModeToggle />
+        
+        <main className="container mx-auto px-0 pb-24">
+          <PackingList listId={id} />
+        </main>
+
+        {/* Fixed bottom add item form */}
+        <ConditionalAddForm>
+          <AddItemForm listId={id} />
+        </ConditionalAddForm>
+      </PackingModeProvider>
     </div>
   );
 }
