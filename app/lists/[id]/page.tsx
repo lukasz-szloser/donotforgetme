@@ -13,7 +13,7 @@ import { ShareListDialog } from "@/components/collaboration/ShareListDialog";
 import { CollaboratorAvatars } from "@/components/collaboration/CollaboratorAvatars";
 import { PackingModeWrapper } from "@/components/packing/PackingModeWrapper";
 import { EditListDialog } from "@/components/packing/EditListDialog";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2, Luggage } from "lucide-react";
 import Link from "next/link";
 import type { Database } from "@/types/database";
 import { buildTreeFromFlatList } from "@/lib/utils";
@@ -88,19 +88,25 @@ export default async function ListPage({ params }: PageProps) {
   const collaborators = await getCollaborators(id);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+    <div className="min-h-screen gradient-page">
       <RealtimeListListener listId={id} />
 
-      <header className="bg-white dark:bg-slate-800 shadow sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-3">
+      {/* Header */}
+      <header className="sticky top-0 z-50 glass border-b border-border/50">
+        <div className="container mx-auto px-4 py-3">
+          {/* Top row - navigation and actions */}
+          <div className="flex items-center justify-between mb-4">
             <Link href="/dashboard">
-              <Button variant="ghost" size="sm" className="gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-2 text-muted-foreground hover:text-foreground"
+              >
                 <ArrowLeft className="w-4 h-4" />
-                Powrót
+                <span className="hidden sm:inline">Dashboard</span>
               </Button>
             </Link>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               {isOwner && (
                 <EditListDialog
                   listId={id}
@@ -118,33 +124,50 @@ export default async function ListPage({ params }: PageProps) {
               {isOwner && (
                 <form action={deleteList}>
                   <input type="hidden" name="listId" value={id} />
-                  <Button type="submit" variant="ghost" size="sm" className="gap-2 text-red-600">
+                  <Button
+                    type="submit"
+                    variant="ghost"
+                    size="sm"
+                    className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
                     <Trash2 className="w-4 h-4" />
-                    Usuń listę
+                    <span className="hidden sm:inline">Usuń</span>
                   </Button>
                 </form>
               )}
             </div>
           </div>
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{list.name}</h1>
-            {collaborators.length > 0 && <CollaboratorAvatars collaborators={collaborators} />}
-          </div>
-          {list.description && (
-            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{list.description}</p>
-          )}
-          <div className="mt-3">
-            <div className="flex items-center justify-between text-sm mb-2">
-              <span className="text-slate-600 dark:text-slate-400">
-                {checked} z {total} spakowane
-              </span>
-              <span className="font-medium text-blue-600">{progress}%</span>
+
+          {/* List info */}
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3 mb-1">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Luggage className="w-5 h-5 text-primary" />
+                </div>
+                <h1 className="text-xl sm:text-2xl font-bold truncate">{list.name}</h1>
+              </div>
+              {list.description && (
+                <p className="text-sm text-muted-foreground ml-13 line-clamp-2">{list.description}</p>
+              )}
             </div>
-            <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
-              <div
-                className="bg-blue-600 h-2 rounded-full transition-all"
-                style={{ width: `${progress}%` }}
-              />
+            {collaborators.length > 0 && (
+              <div className="flex-shrink-0">
+                <CollaboratorAvatars collaborators={collaborators} />
+              </div>
+            )}
+          </div>
+
+          {/* Progress bar */}
+          <div className="mt-4">
+            <div className="flex items-center justify-between text-sm mb-2">
+              <span className="text-muted-foreground">
+                <span className="font-semibold text-foreground">{checked}</span> z {total} spakowane
+              </span>
+              <span className="font-semibold text-primary">{progress}%</span>
+            </div>
+            <div className="progress-bar h-2.5">
+              <div className="progress-fill" style={{ width: `${progress}%` }} />
             </div>
           </div>
         </div>
@@ -154,12 +177,14 @@ export default async function ListPage({ params }: PageProps) {
         <PackingModeToggle />
 
         <PackingModeWrapper listId={id} packingQueueData={JSON.stringify(packingQueue)}>
-          <main className="container mx-auto px-0 pb-24">
-            <PackingList listId={id} />
+          <main className="container mx-auto pb-28">
+            <div className="bg-card rounded-xl shadow-soft border border-border/50 mt-4 mx-4 overflow-hidden">
+              <PackingList listId={id} />
+            </div>
           </main>
         </PackingModeWrapper>
 
-        {/* Fixed bottom add item form - outside wrapper to conditionally hide */}
+        {/* Fixed bottom add item form */}
         <ConditionalAddForm>
           <AddItemForm listId={id} />
         </ConditionalAddForm>

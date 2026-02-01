@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
-import { Check, Trash2, ChevronRight, Plus, Pencil } from "lucide-react";
+import { Check, Trash2, ChevronRight, Plus, Pencil, FolderOpen } from "lucide-react";
 import { toggleItemChecked, deleteItem, addItem, updateItem } from "@/actions/packing";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -46,17 +46,6 @@ export function PackingItem({ item, depth = 0, maxVisibleDepth = 5 }: PackingIte
   // Swipe indicators
   const swipeRightOpacity = useTransform(x, [0, SWIPE_THRESHOLD], [0, 1]);
   const swipeLeftOpacity = useTransform(x, [0, -SWIPE_THRESHOLD], [0, 1]);
-  const backgroundColor = useTransform(
-    x,
-    [-MAX_SWIPE, -SWIPE_THRESHOLD, 0, SWIPE_THRESHOLD, MAX_SWIPE],
-    [
-      "rgb(239 68 68)",
-      "rgb(248 113 113)",
-      "rgb(255 255 255)",
-      "rgb(134 239 172)",
-      "rgb(74 222 128)",
-    ]
-  );
 
   const hasChildren = item.children && item.children.length > 0;
   const isNested = depth > 0;
@@ -127,12 +116,11 @@ export function PackingItem({ item, depth = 0, maxVisibleDepth = 5 }: PackingIte
       toast.success("Pod-element dodany");
       setChildTitle("");
       setIsAddingChild(false);
-      setIsExpanded(true); // Auto-expand to show new child
+      setIsExpanded(true);
     }
   };
 
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    // Disable swipe in packing mode
     if (isPackingMode) {
       x.set(0);
       return;
@@ -141,22 +129,18 @@ export function PackingItem({ item, depth = 0, maxVisibleDepth = 5 }: PackingIte
     const offsetX = info.offset.x;
 
     if (offsetX > SWIPE_THRESHOLD) {
-      // Swipe right - toggle checked
       handleToggle();
       x.set(0);
     } else if (offsetX < -SWIPE_THRESHOLD) {
-      // Swipe left - show edit/delete menu
       setShowSwipeMenu(true);
       x.set(0);
     } else {
-      // Bounce back
       x.set(0);
     }
   };
 
-  const canAddChildren = depth < 4; // Allow adding children up to level 4 (so max depth is 5)
+  const canAddChildren = depth < 4;
 
-  // In packing mode: clicking anywhere toggles the item
   const handleRowClick = () => {
     if (isPackingMode) {
       handleToggle();
@@ -164,15 +148,20 @@ export function PackingItem({ item, depth = 0, maxVisibleDepth = 5 }: PackingIte
   };
 
   return (
-    <div className={cn("relative", isNested && "ml-4 border-l-2 border-slate-200")}>
+    <div
+      className={cn(
+        "relative",
+        isNested && "ml-4 border-l-2 border-border/50 dark:border-border/30"
+      )}
+    >
       {/* Swipe indicators - hidden in packing mode */}
-      <div className="relative overflow-hidden">
+      <div className="relative overflow-hidden rounded-lg">
         {!isPackingMode && (
           <>
             {/* Left indicator (edit/delete menu) */}
             <motion.div
               style={{ opacity: swipeLeftOpacity }}
-              className="absolute left-0 top-0 bottom-0 w-16 flex items-center justify-center bg-slate-600 text-white"
+              className="absolute left-0 top-0 bottom-0 w-16 flex items-center justify-center bg-muted text-muted-foreground"
             >
               <Pencil className="w-5 h-5" />
             </motion.div>
@@ -180,7 +169,7 @@ export function PackingItem({ item, depth = 0, maxVisibleDepth = 5 }: PackingIte
             {/* Right indicator (check) */}
             <motion.div
               style={{ opacity: swipeRightOpacity }}
-              className="absolute right-0 top-0 bottom-0 w-16 flex items-center justify-center bg-green-500 text-white"
+              className="absolute right-0 top-0 bottom-0 w-16 flex items-center justify-center bg-success text-success-foreground"
             >
               <Check className="w-5 h-5" />
             </motion.div>
@@ -193,15 +182,16 @@ export function PackingItem({ item, depth = 0, maxVisibleDepth = 5 }: PackingIte
           dragConstraints={{ left: -MAX_SWIPE, right: MAX_SWIPE }}
           dragElastic={0.2}
           onDragEnd={handleDragEnd}
-          style={{ x, backgroundColor: isPackingMode ? undefined : backgroundColor }}
+          style={{ x }}
           onClick={handleRowClick}
           className={cn(
-            "relative flex items-center gap-3 p-3",
-            isPackingMode ? "min-h-[56px]" : "min-h-[48px]",
+            "relative flex items-center gap-3 px-4 py-3 bg-card",
+            isPackingMode ? "min-h-[56px]" : "min-h-[52px]",
             !isPackingMode && "cursor-grab active:cursor-grabbing",
-            isPackingMode && "cursor-pointer",
-            "border-b border-slate-200 transition-colors",
-            isPending && "opacity-50"
+            isPackingMode && "cursor-pointer hover:bg-muted/50",
+            "border-b border-border/30 transition-all duration-200",
+            isPending && "opacity-50",
+            isChecked && "bg-success/5"
           )}
         >
           {/* Checkbox */}
@@ -214,27 +204,36 @@ export function PackingItem({ item, depth = 0, maxVisibleDepth = 5 }: PackingIte
             }}
             disabled={isPending}
             className={cn(
-              "flex-shrink-0 rounded border-2 flex items-center justify-center transition-all",
-              isPackingMode ? "w-8 h-8" : "w-6 h-6",
-              isChecked ? "bg-blue-600 border-blue-600" : "border-slate-300 hover:border-blue-500"
+              "flex-shrink-0 rounded-lg border-2 flex items-center justify-center transition-all duration-200 touch-target",
+              isPackingMode ? "w-8 h-8" : "w-7 h-7",
+              isChecked
+                ? "bg-primary border-primary"
+                : "border-muted-foreground/30 hover:border-primary/50"
             )}
             type="button"
           >
             {isChecked && (
-              <Check className={cn(isPackingMode ? "w-5 h-5" : "w-4 h-4", "text-white")} />
+              <Check className={cn(isPackingMode ? "w-5 h-5" : "w-4 h-4", "text-primary-foreground")} />
             )}
           </button>
 
           {/* Title */}
           <span
             className={cn(
-              "flex-1",
-              isPackingMode ? "text-lg" : "text-base",
-              isChecked && "line-through text-slate-500"
+              "flex-1 transition-all duration-200",
+              isPackingMode ? "text-lg font-medium" : "text-base",
+              isChecked && "line-through text-muted-foreground"
             )}
           >
             {item.title}
           </span>
+
+          {/* Children count badge */}
+          {hasChildren && !isExpanded && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+              {item.children!.length}
+            </span>
+          )}
 
           {/* Add child button - only in edit mode */}
           {!isPackingMode && canAddChildren && (
@@ -243,11 +242,11 @@ export function PackingItem({ item, depth = 0, maxVisibleDepth = 5 }: PackingIte
                 e.stopPropagation();
                 setIsAddingChild(true);
               }}
-              className="flex-shrink-0 p-1 hover:bg-slate-100 rounded"
+              className="flex-shrink-0 p-2 hover:bg-muted rounded-lg transition-colors touch-target"
               type="button"
               title="Dodaj pod-element"
             >
-              <Plus className="w-5 h-5 text-slate-600" />
+              <Plus className="w-5 h-5 text-muted-foreground hover:text-primary" />
             </button>
           )}
 
@@ -258,11 +257,14 @@ export function PackingItem({ item, depth = 0, maxVisibleDepth = 5 }: PackingIte
                 e.stopPropagation();
                 setIsExpanded(!isExpanded);
               }}
-              className="flex-shrink-0 p-1 hover:bg-slate-100 rounded"
+              className="flex-shrink-0 p-2 hover:bg-muted rounded-lg transition-colors touch-target"
               type="button"
             >
               <ChevronRight
-                className={cn("w-5 h-5 transition-transform", isExpanded && "rotate-90")}
+                className={cn(
+                  "w-5 h-5 text-muted-foreground transition-transform duration-200",
+                  isExpanded && "rotate-90"
+                )}
               />
             </button>
           )}
@@ -271,14 +273,14 @@ export function PackingItem({ item, depth = 0, maxVisibleDepth = 5 }: PackingIte
 
       {/* Dialog for adding child items */}
       <Dialog open={isAddingChild} onOpenChange={setIsAddingChild}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Dodaj pod-element</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <p className="text-sm text-slate-600 mb-2">
-                Rodzic: <span className="font-medium">{item.title}</span>
+              <p className="text-sm text-muted-foreground mb-3">
+                Rodzic: <span className="font-medium text-foreground">{item.title}</span>
               </p>
               <Input
                 type="text"
@@ -291,7 +293,7 @@ export function PackingItem({ item, depth = 0, maxVisibleDepth = 5 }: PackingIte
                   }
                 }}
                 autoFocus
-                className="min-h-[48px]"
+                className="h-12 rounded-xl"
               />
             </div>
           </div>
@@ -302,13 +304,14 @@ export function PackingItem({ item, depth = 0, maxVisibleDepth = 5 }: PackingIte
                 setIsAddingChild(false);
                 setChildTitle("");
               }}
+              className="touch-target"
             >
               Anuluj
             </Button>
             <Button
               onClick={handleAddChild}
               disabled={!childTitle.trim()}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="btn-primary touch-target"
             >
               Dodaj
             </Button>
@@ -318,26 +321,24 @@ export function PackingItem({ item, depth = 0, maxVisibleDepth = 5 }: PackingIte
 
       {/* Dialog for editing item */}
       <Dialog open={isEditing} onOpenChange={setIsEditing}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Edytuj element</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Input
-                type="text"
-                placeholder="Nazwa elementu..."
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleEdit();
-                  }
-                }}
-                autoFocus
-                className="min-h-[48px]"
-              />
-            </div>
+            <Input
+              type="text"
+              placeholder="Nazwa elementu..."
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleEdit();
+                }
+              }}
+              autoFocus
+              className="h-12 rounded-xl"
+            />
           </div>
           <DialogFooter>
             <Button
@@ -346,13 +347,14 @@ export function PackingItem({ item, depth = 0, maxVisibleDepth = 5 }: PackingIte
                 setIsEditing(false);
                 setEditTitle(item.title);
               }}
+              className="touch-target"
             >
               Anuluj
             </Button>
             <Button
               onClick={handleEdit}
               disabled={!editTitle.trim()}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="btn-primary touch-target"
             >
               Zapisz
             </Button>
@@ -362,20 +364,20 @@ export function PackingItem({ item, depth = 0, maxVisibleDepth = 5 }: PackingIte
 
       {/* Swipe menu dialog */}
       <Dialog open={showSwipeMenu} onOpenChange={setShowSwipeMenu}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Akcje dla: {item.title}</DialogTitle>
+            <DialogTitle className="truncate pr-4">{item.title}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-2">
+          <div className="space-y-2 py-2">
             <Button
               onClick={() => {
                 setShowSwipeMenu(false);
                 setIsEditing(true);
               }}
-              className="w-full justify-start min-h-[48px]"
+              className="w-full justify-start h-12 rounded-xl"
               variant="outline"
             >
-              <Pencil className="w-5 h-5 mr-2" />
+              <Pencil className="w-5 h-5 mr-3" />
               Edytuj
             </Button>
             <Button
@@ -385,24 +387,19 @@ export function PackingItem({ item, depth = 0, maxVisibleDepth = 5 }: PackingIte
                   handleDelete();
                 }
               }}
-              className="w-full justify-start min-h-[48px]"
+              className="w-full justify-start h-12 rounded-xl text-destructive hover:text-destructive hover:bg-destructive/10"
               variant="outline"
             >
-              <Trash2 className="w-5 h-5 mr-2 text-red-500" />
-              <span className="text-red-500">Usuń</span>
+              <Trash2 className="w-5 h-5 mr-3" />
+              Usuń
             </Button>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowSwipeMenu(false)}>
-              Anuluj
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Nested children */}
       {hasChildren && isExpanded && !shouldLimitNesting && (
-        <div className="mt-1">
+        <div className="mt-0.5">
           {item.children!.map((child) => (
             <PackingItem
               key={child.id}
@@ -416,8 +413,9 @@ export function PackingItem({ item, depth = 0, maxVisibleDepth = 5 }: PackingIte
 
       {/* Drill-down indicator for deep nesting */}
       {hasChildren && shouldLimitNesting && (
-        <div className="ml-4 p-2 text-sm text-slate-500 bg-slate-50 rounded">
-          📦 {item.children!.length} pod-elementów (ograniczenie głębokości)
+        <div className="ml-4 p-3 text-sm text-muted-foreground bg-muted/50 rounded-lg flex items-center gap-2">
+          <FolderOpen className="w-4 h-4" />
+          {item.children!.length} pod-elementów
         </div>
       )}
     </div>
