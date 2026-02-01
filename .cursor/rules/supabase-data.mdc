@@ -13,7 +13,7 @@ globs: **/supabase/**/*.{ts,tsx}, actions/**/*.ts, types/**/*.ts
 - `profiles`
 
 ## Data Access Patterns
-1.  **Clients:** Use `@/utils/supabase/server` for Server Components/Actions and `@/utils/supabase/client` for Client Components.
+1.  **Clients:** Use `@/lib/supabase/server` for Server Components/Actions and `@/lib/supabase/client` for Client Components.
 2.  **Recursive Lists:**
     - FETCH flat data from DB: `select * from packing_items where list_id = X`.
     - TRANSFORM to tree structure in JavaScript (using a utility function).
