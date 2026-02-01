@@ -39,18 +39,18 @@ const mockItems: PackingItem[] = [
 
 /**
  * E2E Test Route - Packing Session
- * 
+ *
  * This route is used for E2E testing only. It renders the PackingSession
  * component with hardcoded mock data, avoiding database dependencies.
- * 
+ *
  * Available only in development (protected by middleware for /e2e/* routes)
  */
 export default function E2EPackingTestPage() {
   // Filter to only unpacked items (queue logic)
-  const unpackedItems = mockItems.filter(item => !item.checked);
+  const unpackedItems = mockItems.filter((item) => !item.checked);
 
   // Only show in development
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === "production") {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-muted-foreground">This page is only available in development.</p>
@@ -66,10 +66,10 @@ export default function E2EPackingTestPage() {
           This page is for automated testing. Mock data: {unpackedItems.length} unpacked items.
         </p>
       </div>
-      
+
       <PackingSessionTest
         queue={unpackedItems}
-        onComplete={() => console.log('Packing complete!')}
+        onComplete={() => console.log("Packing complete!")}
       />
     </div>
   );

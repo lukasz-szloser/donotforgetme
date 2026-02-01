@@ -1,7 +1,9 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Smoke Tests", () => {
-  test("should redirect to /login for unauthenticated users accessing /dashboard", async ({ page }) => {
+  test("should redirect to /login for unauthenticated users accessing /dashboard", async ({
+    page,
+  }) => {
     await page.goto("/dashboard");
 
     // Should redirect to login page

@@ -108,7 +108,7 @@
      - ✅ Toggle between list and card view
      - ✅ Progress bar updates correctly
      - ⏭️ 3 testy pominięte (require full page with PackingModeWrapper)
-- **Konfiguracja**: 
+- **Konfiguracja**:
   - `playwright.config.ts`: Auto-start dev server
   - `middleware.ts`: Bypass auth for `/e2e/*` routes
   - Chromium browser

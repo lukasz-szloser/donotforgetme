@@ -2,10 +2,10 @@ import { test, expect } from "@playwright/test";
 
 /**
  * E2E Tests for Packing Session (Card Mode)
- * 
+ *
  * These tests use a dedicated UI test route at /e2e/packing
  * which renders components with hardcoded mock data.
- * 
+ *
  * This approach avoids:
  * - Database dependencies
  * - Auth complexities
@@ -23,7 +23,7 @@ test.describe("Packing Session - Card Mode (UI Test Route)", () => {
     // Wait for page to load
     await page.waitForLoadState("networkidle");
 
-    // Wait for packing session to appear  
+    // Wait for packing session to appear
     await page.waitForSelector('text="Pasta do zębów"', { timeout: 5000 });
 
     // Verify first unpacked item is displayed
@@ -97,7 +97,9 @@ test.describe("Packing Session - Card Mode (UI Test Route)", () => {
     // This test would require full page with PackingModeWrapper
   });
 
-  test.skip("should toggle between list view and card view (requires full page)", async ({ page }) => {
+  test.skip("should toggle between list view and card view (requires full page)", async ({
+    page,
+  }) => {
     await page.goto(`http://localhost:3000/e2e/packing`);
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(300);
