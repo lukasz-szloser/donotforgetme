@@ -20,11 +20,7 @@ export async function PackingList({ listId }: PackingListProps) {
     .order("position", { ascending: true });
 
   if (error || !items) {
-    return (
-      <div className="p-4 text-center text-slate-500">
-        Nie udało się załadować elementów
-      </div>
-    );
+    return <div className="p-4 text-center text-slate-500">Nie udało się załadować elementów</div>;
   }
 
   if (items.length === 0) {

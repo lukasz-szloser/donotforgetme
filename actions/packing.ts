@@ -14,14 +14,20 @@ type PackingItemUpdate = Database["public"]["Tables"]["packing_items"]["Update"]
 
 // Validation schemas
 const createListSchema = z.object({
-  name: z.string().min(1, "Nazwa listy jest wymagana").max(100, "Nazwa może mieć maksimum 100 znaków"),
+  name: z
+    .string()
+    .min(1, "Nazwa listy jest wymagana")
+    .max(100, "Nazwa może mieć maksimum 100 znaków"),
   description: z.string().max(500, "Opis może mieć maksimum 500 znaków").optional(),
 });
 
 const addItemSchema = z.object({
   listId: z.string().uuid("Nieprawidłowe ID listy"),
   parentId: z.string().uuid("Nieprawidłowe ID rodzica").nullable(),
-  title: z.string().min(1, "Tytuł elementu jest wymagany").max(200, "Tytuł może mieć maksimum 200 znaków"),
+  title: z
+    .string()
+    .min(1, "Tytuł elementu jest wymagany")
+    .max(200, "Tytuł może mieć maksimum 200 znaków"),
 });
 
 const toggleItemSchema = z.object({
@@ -61,8 +67,10 @@ async function hasListAccess(listId: string, userId: string): Promise<boolean> {
   if (data.owner_id === userId) return true;
 
   // User is collaborator
-  const collaborators = Array.isArray((data as unknown as { list_collaborators: unknown }).list_collaborators)
-    ? ((data as unknown as { list_collaborators: { user_id: string }[] }).list_collaborators)
+  const collaborators = Array.isArray(
+    (data as unknown as { list_collaborators: unknown }).list_collaborators
+  )
+    ? (data as unknown as { list_collaborators: { user_id: string }[] }).list_collaborators
     : [];
   return collaborators.some((c) => c.user_id === userId);
 }
@@ -70,9 +78,7 @@ async function hasListAccess(listId: string, userId: string): Promise<boolean> {
 /**
  * Create a new packing list
  */
-export async function createList(
-  formData: FormData
-): Promise<ActionResponse<{ id: string }>> {
+export async function createList(formData: FormData): Promise<ActionResponse<{ id: string }>> {
   try {
     const rawData = {
       name: formData.get("name"),
@@ -157,10 +163,7 @@ export async function deleteList(formData: FormData): Promise<void> {
     }
 
     // Delete list (cascade will delete items and collaborators)
-    const { error } = await supabase
-      .from("packing_lists")
-      .delete()
-      .eq("id", validatedData.listId);
+    const { error } = await supabase.from("packing_lists").delete().eq("id", validatedData.listId);
 
     if (error) {
       console.error("Error deleting list:", error);
@@ -252,10 +255,7 @@ export async function addItem(formData: FormData): Promise<ActionResponse<{ id: 
 /**
  * Toggle item checked status (ultra-fast, no checks needed for UX)
  */
-export async function toggleItemChecked(
-  itemId: string,
-  checked: boolean
-): Promise<ActionResponse> {
+export async function toggleItemChecked(itemId: string, checked: boolean): Promise<ActionResponse> {
   try {
     const validatedData = toggleItemSchema.parse({ itemId, checked });
     const supabase = await createClient();

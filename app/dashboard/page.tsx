@@ -47,7 +47,10 @@ export default async function DashboardPage() {
       const { data: items } = (await supabase
         .from("packing_items")
         .select("id, checked")
-        .eq("list_id", list.id)) as { data: { id: string; checked: boolean }[] | null; error: unknown };
+        .eq("list_id", list.id)) as {
+        data: { id: string; checked: boolean }[] | null;
+        error: unknown;
+      };
 
       const total = items?.length || 0;
       const checked = items?.filter((item) => item.checked).length || 0;
