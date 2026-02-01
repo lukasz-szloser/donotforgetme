@@ -213,7 +213,9 @@ export function PackingItem({ item, depth = 0, maxVisibleDepth = 5 }: PackingIte
             type="button"
           >
             {isChecked && (
-              <Check className={cn(isPackingMode ? "w-5 h-5" : "w-4 h-4", "text-primary-foreground")} />
+              <Check
+                className={cn(isPackingMode ? "w-5 h-5" : "w-4 h-4", "text-primary-foreground")}
+              />
             )}
           </button>
 

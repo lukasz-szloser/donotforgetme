@@ -15,24 +15,23 @@ Gruntowna modernizacja wizualna aplikacji z zachowaniem wymagań PRD (mobile-fir
 #### Paleta Kolorów (Travel-Inspired)
 
 ```css
---primary: 168 76% 42%    /* Teal - morska świeżość */
---accent: 15 85% 57%      /* Coral - ciepły akcent */
---success: 160 84% 39%    /* Emerald - pozytywne akcje */
+--primary: 168 76% 42% /* Teal - morska świeżość */ --accent: 15 85% 57% /* Coral - ciepły akcent */
+  --success: 160 84% 39% /* Emerald - pozytywne akcje */;
 ```
 
 #### Nowe Utility Classes
 
-| Klasa | Opis |
-|-------|------|
-| `.glass` | Glassmorphism effect (backdrop-blur, transparentność) |
-| `.glass-card` | Karta z efektem szkła |
-| `.gradient-page` | Gradientowe tło strony |
-| `.progress-bar` | Stylizowany pasek postępu |
-| `.shadow-soft` | Miękki cień dla kart |
-| `.shadow-elevated` | Mocniejszy cień (floating elements) |
-| `.touch-target` | Minimalny obszar dotyku 44px |
-| `.btn-primary` | Stylizowany przycisk główny |
-| `.text-gradient` | Gradientowy tekst |
+| Klasa              | Opis                                                  |
+| ------------------ | ----------------------------------------------------- |
+| `.glass`           | Glassmorphism effect (backdrop-blur, transparentność) |
+| `.glass-card`      | Karta z efektem szkła                                 |
+| `.gradient-page`   | Gradientowe tło strony                                |
+| `.progress-bar`    | Stylizowany pasek postępu                             |
+| `.shadow-soft`     | Miękki cień dla kart                                  |
+| `.shadow-elevated` | Mocniejszy cień (floating elements)                   |
+| `.touch-target`    | Minimalny obszar dotyku 44px                          |
+| `.btn-primary`     | Stylizowany przycisk główny                           |
+| `.text-gradient`   | Gradientowy tekst                                     |
 
 #### Animacje
 
@@ -97,7 +96,7 @@ Gruntowna modernizacja wizualna aplikacji z zachowaniem wymagań PRD (mobile-fir
 #### Mobile-First Features
 
 - ✅ Minimum 44px touch targets (.touch-target)
-- ✅ Safe area padding (env(safe-area-inset-*))
+- ✅ Safe area padding (env(safe-area-inset-\*))
 - ✅ Responsive typography
 - ✅ Bottom-positioned primary actions
 - ✅ Swipe gesture support (Framer Motion)
