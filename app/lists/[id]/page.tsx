@@ -2,8 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import { deleteList } from "@/actions/packing";
 import { Button } from "@/components/ui/button";
-import { PackingList } from "@/components/packing/PackingList";
 import { RealtimeListListener } from "@/components/packing/RealtimeListListener";
+import { PackingModeWrapper } from "@/components/packing/PackingModeWrapper";
+import { PackingList } from "@/components/packing/PackingList";
 import { AddItemForm } from "@/components/packing/AddItemForm";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import Link from "next/link";
@@ -113,14 +114,11 @@ export default async function ListPage({ params }: PageProps) {
         </div>
       </header>
 
-      <main className="container mx-auto px-0 pb-24">
+      <PackingModeWrapper
+        addItemForm={<AddItemForm listId={id} />}
+      >
         <PackingList listId={id} />
-      </main>
-
-      {/* Fixed bottom add item form */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 p-4 shadow-lg">
-        <AddItemForm listId={id} />
-      </div>
+      </PackingModeWrapper>
     </div>
   );
 }

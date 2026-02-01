@@ -42,7 +42,10 @@ export async function PackingList({ listId }: PackingListProps) {
   return (
     <div className="divide-y divide-slate-200">
       {tree.map((item) => (
-        <PackingItem key={item.id} item={item} />
+        <PackingItem 
+          key={item.id} 
+          item={item}
+        />
       ))}
     </div>
   );
