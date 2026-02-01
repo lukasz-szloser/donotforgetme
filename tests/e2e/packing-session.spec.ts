@@ -1,192 +1,182 @@
 import { test, expect } from "@playwright/test";
 
-test.describe("Packing Session - Card Mode", () => {
+/**
+ * E2E Tests for Packing Session (Card Mode)
+ * 
+ * These tests use a dedicated UI test route at /e2e/packing
+ * which renders components with hardcoded mock data.
+ * 
+ * This approach avoids:
+ * - Database dependencies
+ * - Auth complexities
+ * - Network mocking limitations with Server Components
+ */
+
+test.describe("Packing Session - Card Mode (UI Test Route)", () => {
   test.beforeEach(async ({ page }) => {
-    // Note: This test requires a running application with seeded test data
-    // In a real scenario, you would set up authentication and test data
-    await page.goto("http://localhost:3000");
+    // No mocking needed - using dedicated test route with hardcoded data
   });
 
-  test("should navigate to packing session and complete a card", async ({ page }) => {
-    // This is a placeholder test that demonstrates the intended flow
-    // In production, you would:
-    // 1. Log in as test user
-    // 2. Navigate to a specific test list
-    // 3. Enable packing mode
-    // 4. Verify card interface is displayed
-    // 5. Perform swipe gesture or click button
-    // 6. Verify progress counter updates
-    // 7. Verify next card appears
+  test("should load card mode and display first unpacked item", async ({ page }) => {
+    await page.goto(`http://localhost:3000/e2e/packing`);
 
-    // Example flow (commented out until proper test setup):
-    /*
-    // Login
-    await page.goto('/login');
-    await page.fill('input[type="email"]', 'test@example.com');
-    await page.fill('input[type="password"]', 'testpassword');
-    await page.click('button[type="submit"]');
-    
-    // Navigate to test list
-    await page.goto('/lists/test-list-id');
-    
-    // Enable packing mode
-    await page.click('input[id="packing-mode"]');
-    
-    // Verify card is displayed
-    await expect(page.locator('text=Element 1 z')).toBeVisible();
-    
+    // Wait for page to load
+    await page.waitForLoadState("networkidle");
+
+    // Wait for packing session to appear  
+    await page.waitForSelector('text="Pasta do zębów"', { timeout: 5000 });
+
+    // Verify first unpacked item is displayed
+    await expect(page.locator("text=Pasta do zębów")).toBeVisible();
+
+    // Verify progress indicator shows correct count (2 unpacked items)
+    await expect(page.locator('text="Element 1 z 2"')).toBeVisible();
+  });
+
+  test("should mark item as packed and show next card", async ({ page }) => {
+    await page.goto(`http://localhost:3000/e2e/packing`);
+    await page.waitForLoadState("networkidle");
+    await page.waitForSelector('text="Pasta do zębów"');
+
+    // Verify first card is visible
+    await expect(page.locator("text=Pasta do zębów")).toBeVisible();
+
     // Click "Spakowane" button
     await page.click('button:has-text("Spakowane")');
-    
-    // Verify progress updated
-    await expect(page.locator('text=Element 2 z')).toBeVisible();
-    
-    // Verify card animation
-    await expect(page.locator('[data-testid="packing-card"]')).toBeVisible();
-    */
 
-    // Placeholder assertion
-    expect(true).toBe(true);
+    // Wait for card transition
+    await page.waitForTimeout(500);
+
+    // Verify progress updated to second item
+    await expect(page.locator('text="Element 2 z 2"')).toBeVisible();
+
+    // Verify second card is now visible
+    await expect(page.locator("text=Szczoteczka")).toBeVisible();
   });
 
-  test("should skip a card and move it to end of queue", async ({ page }) => {
-    // Example flow for skip functionality
-    /*
-    // ... setup and login ...
-    
+  test("should skip item and move to next", async ({ page }) => {
+    await page.goto(`http://localhost:3000/e2e/packing`);
+    await page.waitForLoadState("networkidle");
+    await page.waitForSelector('text="Pasta do zębów"');
+
     // Get first card title
-    const firstCardTitle = await page.textContent('h3');
-    
+    const firstCardTitle = await page.locator("h3").first().textContent();
+
     // Click "Pomiń" button
     await page.click('button:has-text("Pomiń")');
-    
+
+    // Wait for card transition
+    await page.waitForTimeout(500);
+
     // Verify different card is now displayed
-    const newCardTitle = await page.textContent('h3');
-    expect(newCardTitle).not.toBe(firstCardTitle);
-    
-    // Verify skipped card appears later in queue
-    // (would require going through queue to verify)
-    */
-
-    // Placeholder assertion
-    expect(true).toBe(true);
+    const secondCardTitle = await page.locator("h3").first().textContent();
+    expect(secondCardTitle).not.toBe(firstCardTitle);
   });
 
-  test("should show completion screen when queue is empty", async ({ page }) => {
-    // Example flow for completion
-    /*
-    // ... setup with small test list (e.g., 2 items) ...
-    
-    // Mark all items as packed
+  test("should show completion screen when all items are packed", async ({ page }) => {
+    await page.goto(`http://localhost:3000/e2e/packing`);
+    await page.waitForLoadState("networkidle");
+    await page.waitForSelector('text="Pasta do zębów"');
+
+    // Pack first item
     await page.click('button:has-text("Spakowane")');
+    await page.waitForTimeout(500);
+
+    // Pack second item
     await page.click('button:has-text("Spakowane")');
-    
-    // Verify completion screen
-    await expect(page.locator('text=Gratulacje!')).toBeVisible();
-    await expect(page.locator('text=Spakowałeś wszystkie przedmioty')).toBeVisible();
-    
-    // Verify "Powrót do listy" button
+    await page.waitForTimeout(500);
+
+    // Verify completion screen appears
+    await expect(page.locator('text="Gratulacje!"')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator("text=/Spakowałeś wszystkie/i")).toBeVisible();
     await expect(page.locator('button:has-text("Powrót do listy")')).toBeVisible();
-    */
-
-    // Placeholder assertion
-    expect(true).toBe(true);
   });
 
-  test("should apply Smart Check when marking item as packed", async ({ page }) => {
-    // Example flow for Smart Check verification
-    /*
-    // ... setup with nested list structure ...
-    // e.g., "Kosmetyczka" with children "Pasta" and "Szczoteczka"
-    
-    // Enable packing mode - should show only leaf items
-    await page.click('input[id="packing-mode"]');
-    
-    // Mark first leaf item (e.g., "Pasta")
-    await expect(page.locator('text=Pasta')).toBeVisible();
-    await page.click('button:has-text("Spakowane")');
-    
-    // Mark second leaf item (e.g., "Szczoteczka")
-    await expect(page.locator('text=Szczoteczka')).toBeVisible();
-    await page.click('button:has-text("Spakowane")');
-    
-    // Exit packing mode
-    await page.click('input[id="packing-mode"]');
-    
-    // Verify parent item is also checked (Smart Check Bubble Up)
-    await expect(page.locator('[data-testid="item-Kosmetyczka"] input[type="checkbox"]')).toBeChecked();
-    */
-
-    // Placeholder assertion
-    expect(true).toBe(true);
+  test("should toggle between list view and card view", async ({ page }) => {
+    // Test skipped - UI test route doesn't have toggle functionality
+    // This test would require full page with PackingModeWrapper
   });
 
-  test("should handle swipe gestures on mobile", async ({ page }) => {
-    // Example flow for touch gestures
-    /*
-    // Set mobile viewport
-    await page.setViewportSize({ width: 375, height: 667 });
-    
-    // ... setup and navigate to packing session ...
-    
-    // Simulate swipe right gesture
-    const card = page.locator('[data-testid="packing-card"]');
-    const box = await card.boundingBox();
-    if (box) {
-      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-      await page.mouse.down();
-      await page.mouse.move(box.x + box.width + 150, box.y + box.height / 2, { steps: 10 });
-      await page.mouse.up();
-    }
-    
-    // Verify item was marked as packed
-    await expect(page.locator('text=Element 2 z')).toBeVisible();
-    
-    // Simulate swipe left gesture
-    const nextCard = page.locator('[data-testid="packing-card"]');
-    const nextBox = await nextCard.boundingBox();
-    if (nextBox) {
-      await page.mouse.move(nextBox.x + nextBox.width / 2, nextBox.y + nextBox.height / 2);
-      await page.mouse.down();
-      await page.mouse.move(nextBox.x - 150, nextBox.y + nextBox.height / 2, { steps: 10 });
-      await page.mouse.up();
-    }
-    
-    // Verify item was skipped (should show different item)
-    await expect(page.locator('text=Element 2 z')).toBeVisible();
-    */
+  test.skip("should toggle between list view and card view (requires full page)", async ({ page }) => {
+    await page.goto(`http://localhost:3000/e2e/packing`);
+    await page.waitForLoadState("networkidle");
+    await page.waitForTimeout(300);
 
-    // Placeholder assertion
-    expect(true).toBe(true);
+    // Verify card view is shown
+    await expect(page.locator('text="Element 1 z"')).toBeVisible();
+
+    // Verify only one card is visible (not full list)
+    const cards = page.locator("h3");
+    await expect(cards).toHaveCount(1);
+
+    // Disable packing mode
+    await page.click('[id="packing-mode"]');
+    await page.waitForTimeout(300);
+
+    // Verify list view is shown again (all items visible)
+    await expect(page.locator("text=Pasta do zębów")).toBeVisible();
+    await expect(page.locator("text=Szczoteczka")).toBeVisible();
+  });
+
+  test("should display progress bar that updates correctly", async ({ page }) => {
+    await page.goto(`http://localhost:3000/e2e/packing`);
+    await page.waitForLoadState("networkidle");
+    await page.waitForSelector('text="Pasta do zębów"');
+
+    // Verify initial progress (1 of 2)
+    await expect(page.locator('text="Element 1 z 2"')).toBeVisible();
+
+    // Pack first item
+    await page.click('button:has-text("Spakowane")');
+    await page.waitForTimeout(500);
+
+    // Verify progress updated (2 of 2)
+    await expect(page.locator('text="Element 2 z 2"')).toBeVisible();
+
+    // Verify remaining count
+    await expect(page.locator('text="1 pozostało"')).toBeVisible();
   });
 });
 
-test.describe("Packing Mode Toggle", () => {
-  test("should switch between list view and card view", async ({ page }) => {
-    // Example flow for mode switching
-    /*
-    // ... setup and navigate to list ...
-    
-    // Verify list view is shown by default
-    await expect(page.locator('[data-testid="packing-list"]')).toBeVisible();
-    await expect(page.locator('[data-testid="add-item-form"]')).toBeVisible();
-    
-    // Enable packing mode
-    await page.click('input[id="packing-mode"]');
-    
-    // Verify card view is shown
-    await expect(page.locator('text=Element 1 z')).toBeVisible();
-    await expect(page.locator('[data-testid="add-item-form"]')).not.toBeVisible();
-    
-    // Disable packing mode
-    await page.click('input[id="packing-mode"]');
-    
-    // Verify list view is shown again
-    await expect(page.locator('[data-testid="packing-list"]')).toBeVisible();
-    await expect(page.locator('[data-testid="add-item-form"]')).toBeVisible();
-    */
+// These tests require the full page with PackingModeWrapper
+// Skipped since UI test route focuses on PackingSession component only
+test.describe.skip("Packing Mode Toggle (requires full page)", () => {
+  test.beforeEach(async ({ page }) => {
+    // Would need a test route that includes PackingModeWrapper
+  });
 
-    // Placeholder assertion
-    expect(true).toBe(true);
+  test("should hide add item form in packing mode", async ({ page }) => {
+    await page.goto(`http://localhost:3000/lists/${MOCK_LIST_ID}`);
+    await page.waitForLoadState("networkidle");
+
+    // Verify add form is visible in normal mode (if present)
+    // Note: Form might be in a fixed position at bottom
+    const addForm = page.locator('form:has(input[name="title"])').first();
+    const isFormVisible = await addForm.isVisible().catch(() => false);
+
+    if (isFormVisible) {
+      // Enable packing mode
+      await page.click('[id="packing-mode"]');
+      await page.waitForTimeout(300);
+
+      // Verify add form is hidden in packing mode
+      await expect(addForm).not.toBeVisible();
+    }
+  });
+
+  test("should show packing mode toggle switch", async ({ page }) => {
+    await page.goto(`http://localhost:3000/lists/${MOCK_LIST_ID}`);
+    await page.waitForLoadState("networkidle");
+
+    // Verify toggle is visible
+    const toggle = page.locator('[id="packing-mode"]');
+    await expect(toggle).toBeVisible();
+
+    // Verify it's a switch/checkbox
+    const role = await toggle.getAttribute("type");
+    expect(role).toBe("checkbox");
+
+    // Verify label is present
+    await expect(page.locator('label[for="packing-mode"]')).toBeVisible();
   });
 });

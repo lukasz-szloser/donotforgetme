@@ -1,8 +1,8 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Smoke Tests", () => {
-  test("should redirect to /login for unauthenticated users", async ({ page }) => {
-    await page.goto("/");
+  test("should redirect to /login for unauthenticated users accessing /dashboard", async ({ page }) => {
+    await page.goto("/dashboard");
 
     // Should redirect to login page
     await expect(page).toHaveURL(/.*login/);
@@ -15,8 +15,8 @@ test.describe("Smoke Tests", () => {
     await page.waitForLoadState("networkidle");
 
     // Check if login form elements are present
-    const emailInput = page.getByRole("textbox", { name: /email/i });
-    const passwordInput = page.getByLabel(/password/i);
+    const emailInput = page.getByLabel(/email/i);
+    const passwordInput = page.getByLabel(/hasło|password/i);
     const submitButton = page.getByRole("button", { name: /zaloguj|login|sign in/i });
 
     await expect(emailInput).toBeVisible();
@@ -30,9 +30,9 @@ test.describe("Smoke Tests", () => {
     // Wait for the page to load
     await page.waitForLoadState("networkidle");
 
-    // Check if there's some heading or title
-    const heading = page.locator("h1, h2").first();
-    await expect(heading).toBeVisible();
+    // Check if there's app title
+    const title = page.locator("text=Packing Helper");
+    await expect(title).toBeVisible();
   });
 
   test("should have proper meta tags", async ({ page }) => {
