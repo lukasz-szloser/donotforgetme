@@ -11,11 +11,15 @@ import { PackingList } from "@/components/packing/PackingList";
 import { AddItemForm } from "@/components/packing/AddItemForm";
 import { ShareListDialog } from "@/components/collaboration/ShareListDialog";
 import { CollaboratorAvatars } from "@/components/collaboration/CollaboratorAvatars";
+import { PackingModeWrapper } from "@/components/packing/PackingModeWrapper";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import Link from "next/link";
 import type { Database } from "@/types/database";
+import { buildTreeFromFlatList } from "@/lib/utils";
+import { generatePackingQueue } from "@/lib/packing-logic";
 
 type PackingListRow = Database["public"]["Tables"]["packing_lists"]["Row"];
+type PackingItem = Database["public"]["Tables"]["packing_items"]["Row"];
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -66,14 +70,18 @@ export default async function ListPage({ params }: PageProps) {
   }
 
   // Calculate progress
-  const { data: items } = (await supabase
-    .from("packing_items")
-    .select("id, checked")
-    .eq("list_id", id)) as { data: { id: string; checked: boolean }[] | null; error: unknown };
+  const { data: items } = (await supabase.from("packing_items").select("*").eq("list_id", id)) as {
+    data: PackingItem[] | null;
+    error: unknown;
+  };
 
   const total = items?.length || 0;
   const checked = items?.filter((item) => item.checked).length || 0;
   const progress = total > 0 ? Math.round((checked / total) * 100) : 0;
+
+  // Generate packing queue for card mode
+  const tree = items ? buildTreeFromFlatList(items) : [];
+  const packingQueue = generatePackingQueue(tree);
 
   // Fetch collaborators
   const collaborators = await getCollaborators(id);
@@ -136,11 +144,13 @@ export default async function ListPage({ params }: PageProps) {
       <PackingModeProvider isPackingMode={false}>
         <PackingModeToggle />
 
-        <main className="container mx-auto px-0 pb-24">
-          <PackingList listId={id} />
-        </main>
+        <PackingModeWrapper listId={id} packingQueueData={JSON.stringify(packingQueue)}>
+          <main className="container mx-auto px-0 pb-24">
+            <PackingList listId={id} />
+          </main>
+        </PackingModeWrapper>
 
-        {/* Fixed bottom add item form */}
+        {/* Fixed bottom add item form - outside wrapper to conditionally hide */}
         <ConditionalAddForm>
           <AddItemForm listId={id} />
         </ConditionalAddForm>

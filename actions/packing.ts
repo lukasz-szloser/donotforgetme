@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import type { Database } from "@/types/database";
+import { applySmartCheck } from "@/lib/packing-logic";
+import { buildTreeFromFlatList } from "@/lib/utils";
 
 type PackingList = Database["public"]["Tables"]["packing_lists"]["Row"];
 type PackingListInsert = Database["public"]["Tables"]["packing_lists"]["Insert"];
@@ -253,7 +255,8 @@ export async function addItem(formData: FormData): Promise<ActionResponse<{ id: 
 }
 
 /**
- * Toggle item checked status (ultra-fast, no checks needed for UX)
+ * Toggle item checked status with Smart Check logic
+ * Applies Bubble Up and Bubble Down synchronization
  */
 export async function toggleItemChecked(itemId: string, checked: boolean): Promise<ActionResponse> {
   try {
@@ -287,16 +290,33 @@ export async function toggleItemChecked(itemId: string, checked: boolean): Promi
       return { success: false, error: "Brak dostępu" };
     }
 
-    // Update checked status
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const builder: any = supabase.from("packing_items");
-    const { error } = (await builder
-      .update({ checked: validatedData.checked })
-      .eq("id", validatedData.itemId)) as { error: unknown };
+    // Get all items from the list to apply Smart Check logic
+    const { data: allItems, error: fetchAllError } = (await supabase
+      .from("packing_items")
+      .select("*")
+      .eq("list_id", item.list_id)) as { data: PackingItem[] | null; error: unknown };
 
-    if (error) {
-      console.error("Error toggling item:", error);
-      return { success: false, error: "Nie udało się zaktualizować" };
+    if (fetchAllError || !allItems) {
+      return { success: false, error: "Nie udało się pobrać elementów listy" };
+    }
+
+    // Build tree and apply Smart Check logic
+    const tree = buildTreeFromFlatList(allItems);
+    const updatedItems = applySmartCheck(tree, validatedData.itemId, validatedData.checked);
+
+    // Batch update all affected items
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updates = updatedItems.map((updatedItem) => {
+      const builder: any = supabase.from("packing_items");
+      return builder.update({ checked: updatedItem.checked }).eq("id", updatedItem.id);
+    });
+
+    const results = await Promise.all(updates);
+    const hasError = results.some((result) => result.error);
+
+    if (hasError) {
+      console.error("Error updating items:", results.find((r) => r.error)?.error);
+      return { success: false, error: "Nie udało się zaktualizować wszystkich elementów" };
     }
 
     revalidatePath(`/lists/${item.list_id}`);
