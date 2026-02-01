@@ -2,9 +2,13 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { logout } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { CreateListButton } from "@/components/packing/CreateListButton";
+import Link from "next/link";
 import type { Database } from "@/types/database";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+type PackingList = Database["public"]["Tables"]["packing_lists"]["Row"];
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -29,6 +33,29 @@ export default async function DashboardPage() {
 
   // Fallback to email from auth if profile doesn't exist
   const displayName = profile?.full_name || profile?.email || user.email || "Użytkowniku";
+
+  // Fetch user's packing lists
+  const { data: lists } = (await supabase
+    .from("packing_lists")
+    .select("*")
+    .eq("owner_id", user.id)
+    .order("created_at", { ascending: false })) as { data: PackingList[] | null; error: unknown };
+
+  // For each list, count total items and checked items
+  const listsWithStats = await Promise.all(
+    (lists || []).map(async (list) => {
+      const { data: items } = (await supabase
+        .from("packing_items")
+        .select("id, checked")
+        .eq("list_id", list.id)) as { data: { id: string; checked: boolean }[] | null; error: unknown };
+
+      const total = items?.length || 0;
+      const checked = items?.filter((item) => item.checked).length || 0;
+      const progress = total > 0 ? Math.round((checked / total) * 100) : 0;
+
+      return { ...list, total, checked, progress };
+    })
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
@@ -61,38 +88,42 @@ export default async function DashboardPage() {
             <h3 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
               Moje listy pakowania
             </h3>
-            <Button className="bg-blue-600 hover:bg-blue-700">+ Nowa lista</Button>
+            <CreateListButton />
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            {/* Sample packing list cards - to be replaced with real data */}
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer">
-              <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                Wakacje letnie 2024
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                Niezbędne rzeczy na plażę
+          {listsWithStats.length === 0 ? (
+            <div className="bg-white dark:bg-slate-800 p-12 rounded-lg shadow text-center">
+              <p className="text-lg text-slate-600 dark:text-slate-400 mb-4">
+                Nie masz jeszcze żadnych list pakowania
               </p>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-500 dark:text-slate-500">
-                  12 pozycji • 8 spakowanych
-                </span>
-                <span className="text-blue-600 font-medium">67% gotowe</span>
-              </div>
-            </div>
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer">
-              <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                Wyjazd służbowy
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                Konferencja w Warszawie
+              <p className="text-sm text-slate-500 dark:text-slate-500">
+                Kliknij &quot;Nowa lista&quot;, aby utworzyć pierwszą listę
               </p>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-500 dark:text-slate-500">8 pozycji • 2 spakowane</span>
-                <span className="text-blue-600 font-medium">25% gotowe</span>
-              </div>
             </div>
-          </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {listsWithStats.map((list) => (
+                <Link key={list.id} href={`/lists/${list.id}`}>
+                  <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
+                    <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                      {list.name}
+                    </h3>
+                    {list.description && (
+                      <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                        {list.description}
+                      </p>
+                    )}
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-500 dark:text-slate-500">
+                        {list.total} pozycji • {list.checked} spakowanych
+                      </span>
+                      <span className="text-blue-600 font-medium">{list.progress}% gotowe</span>
+                    </div>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </div>
