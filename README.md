@@ -18,6 +18,7 @@ A modern, collaborative packing list application built with Next.js 14, TypeScri
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/)
 - **UI Components**: [Shadcn/UI](https://ui.shadcn.com/)
 - **Backend**: [Supabase](https://supabase.com/) (Authentication + Realtime Database)
+- **Testing**: [Vitest](https://vitest.dev/) (Unit) + [Playwright](https://playwright.dev/) (E2E)
 - **Code Quality**: ESLint, Prettier
 - **CI/CD**: GitHub Actions
 
@@ -152,6 +153,9 @@ create policy "Users can delete their items"
 - `npm run format` - Format code with Prettier
 - `npm run format:check` - Check code formatting
 - `npm run type-check` - Run TypeScript type checking
+- `npm run test:unit` - Run unit tests with Vitest
+- `npm run test:unit:watch` - Run unit tests in watch mode
+- `npm run test:e2e` - Run E2E tests with Playwright (requires dev server running)
 
 ## Project Structure
 
@@ -228,8 +232,57 @@ GitHub Actions workflow automatically:
 
 - Runs ESLint and Prettier checks
 - Performs TypeScript type checking
+- Runs unit tests with Vitest
 - Builds the application
-- Runs on push and pull requests
+- Runs on push and pull requests to main and develop branches
+
+### Testing
+
+The project includes comprehensive testing setup:
+
+#### Unit Tests (Vitest)
+
+Unit tests are located in `lib/*.test.ts` files and test individual functions and utilities.
+
+```bash
+# Run unit tests once
+npm run test:unit
+
+# Run unit tests in watch mode (for development)
+npm run test:unit:watch
+```
+
+**Example test coverage:**
+- `buildTreeFromFlatList` function for converting flat lists to tree structures
+- Handling empty lists
+- Deep nesting support (up to 5 levels)
+- Position-based sorting
+- Orphaned items handling
+
+#### E2E Tests (Playwright)
+
+E2E tests are located in the `tests/` directory and test the application from a user's perspective.
+
+```bash
+# Run E2E tests (automatically starts dev server)
+npm run test:e2e
+
+# Run E2E tests in headed mode (see browser)
+npx playwright test --headed
+
+# Run specific test file
+npx playwright test tests/smoke.spec.ts
+
+# Open Playwright UI for debugging
+npx playwright test --ui
+```
+
+**Smoke tests include:**
+- Login page redirect for unauthenticated users
+- Login form elements visibility
+- Basic page structure and meta tags
+
+**Note:** E2E tests are not included in the CI pipeline to avoid database setup complexity. Run them locally before pushing changes.
 
 ## Contributing
 
